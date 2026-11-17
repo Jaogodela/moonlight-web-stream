@@ -41,8 +41,8 @@ const trueDefaultSettings: Settings =
     "language": "en",
     "enterFullscreenOnStreamStart": false,
     "toggleFullscreenWithKeybind": false,
-    // possible values: "standard", "old"
-    "pageStyle": "standard",
+    // possible values: "gaspar", "moonlight"
+    "pageStyle": "gaspar",
     "hdr": false,
     "useSelectElementPolyfill": false
 }

@@ -10,6 +10,7 @@ export interface Modal<Output> extends Component {
 let modalAbort: AbortController | null = null
 const modalBackground = document.getElementById("modal-overlay")
 const modalParent = document.getElementById("modal-parent")
+let modalTrigger: HTMLElement | null = null
 let previousModal: Modal<unknown> | null = null
 
 // Don't allow context menu event through this background
@@ -31,36 +32,75 @@ export async function showModal<Output>(modal: Modal<Output> | null): Promise<Ou
         showNotification(i.missingModalOverlay)
     }
 
-    if (modalAbort != null) {
-        modalBackground?.classList.add("modal-disabled")
-        modalAbort.abort()
-        modalAbort = null
-    }
-
+    // Preserve the original trigger across a replacement dialog.
+    if (!modalAbort) modalTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    modalAbort?.abort()
+    if (previousModal) previousModal.unmount(modalParent)
+    previousModal = modal
+    modalAbort = null
     if (!modal) {
+        modalBackground?.classList.add("modal-disabled")
+        modalTrigger?.focus()
+        modalTrigger = null
         return null
     }
 
-    if (previousModal) {
-        previousModal.unmount(modalParent)
-    }
-    previousModal = modal
-
     const abortController = new AbortController()
-
     modalAbort = abortController
     modal.mount(modalParent)
     modalBackground?.classList.remove("modal-disabled")
-
-    const output = await modal.onFinish(abortController.signal)
-
-    modalBackground?.classList.add("modal-disabled")
-    abortController.abort()
-    if (modalAbort === abortController) {
-        modalAbort = null
+    modalParent.tabIndex = -1
+    modalParent.setAttribute("role", "dialog")
+    modalParent.setAttribute("aria-modal", "true")
+    const heading = modalParent.querySelector<HTMLElement>("h1, h2, h3, h4, h5, h6")
+    modalParent.removeAttribute("aria-labelledby")
+    modalParent.removeAttribute("aria-label")
+    if (heading) {
+        if (!heading.id) heading.id = "gs-dialog-title"
+        modalParent.setAttribute("aria-labelledby", heading.id)
+    } else {
+        modalParent.setAttribute("aria-label", modalParent.querySelector("p")?.textContent || getTranslations(getCurrentLanguage()).modal.ok)
     }
+    const focusable = () => Array.from(modalParent.querySelectorAll<HTMLElement>(
+        'input:not([type="hidden"]), select, textarea, button, a[href], [tabindex]'
+    )).filter(el => !el.matches(":disabled, [tabindex='-1']") && !el.closest("[hidden], [inert]") && el.getClientRects().length > 0)
+    const initial = focusable().find(el => el.matches("input, select, textarea"))
+        ?? focusable().find(el => el.matches(".gs-btn--primary")) ?? focusable()[0] ?? modalParent
+    initial.focus()
+    document.addEventListener("focusin", event => {
+        if (!modalParent.contains(event.target as Node)) (focusable()[0] ?? modalParent).focus()
+    }, { signal: abortController.signal })
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            const cancel = modalParent.querySelector<HTMLButtonElement>('button[data-modal-cancel]')
+            if (cancel) { event.preventDefault(); event.stopPropagation(); cancel.click() }
+        } else if (event.key === "Tab") {
+            const controls = focusable()
+            const first = controls[0] ?? modalParent
+            const last = controls[controls.length - 1] ?? modalParent
+            if (!controls.length || (event.shiftKey ? document.activeElement === first || document.activeElement === modalParent : document.activeElement === last || document.activeElement === modalParent)) {
+                event.preventDefault()
+                ;(event.shiftKey ? last : first).focus()
+            }
+        }
+    }, { signal: abortController.signal })
 
-    return output
+    try {
+        return await Promise.race([
+            modal.onFinish(abortController.signal),
+            new Promise<null>(resolve => abortController.signal.addEventListener("abort", () => resolve(null), { once: true }))
+        ])
+    } finally {
+        // A replaced modal must never hide or steal focus from the new one.
+        if (modalAbort === abortController) {
+            modalBackground?.classList.add("modal-disabled")
+            modalAbort = null
+            abortController.abort()
+            modalTrigger?.focus()
+            modalTrigger = null
+        }
+        abortController.abort()
+    }
 }
 
 /// --- Helper Modals
@@ -132,6 +172,7 @@ class MessageModal implements Component, Modal<void> {
         this.textElement.innerText = message
 
         this.okButton.innerText = i.ok
+        this.okButton.classList.add("gs-btn", "gs-btn--primary", "gs-message-ok")
 
         this.signal = init?.signal
     }
