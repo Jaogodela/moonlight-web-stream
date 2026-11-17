@@ -130,3 +130,12 @@ still be repeated by the owner on a GPU-capable WSL host:
 The machine used to author this build has no Docker daemon and no GPU, so no
 `docker build`, pairing, or stream test has been performed here. A green SP-CI
 run only shows that the image compiles and packages correctly.
+
+## Upstream sync
+
+`.github/workflows/upstream-sync.yml` runs every Monday at 06:00 UTC and on
+manual dispatch. It fast-forwards the `upstream-sync` branch to
+`upstream/master` and, when a new stable tag appears, rebases the commits on
+`sp/main` onto that tag, then opens a PR (or an issue, if the rebase
+conflicts). It never pushes to upstream. A live stream smoke test after the PR
+is still manual.
