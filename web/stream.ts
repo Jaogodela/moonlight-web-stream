@@ -15,7 +15,7 @@ import { InfoEvent, Stream, StreamCapabilities } from "./stream/index"
 import { defaultStreamInputConfig, MouseMode, ScreenKeyboardSetVisibleEvent, StreamInputConfig } from "./stream/input"
 import { emptyKeyModifiers } from "./stream/keyboard"
 import { LogMessageType } from "./stream/log"
-import { streamStatsToText } from "./stream/stats"
+import { StreamStatsHudData, StreamStatsMode, streamStatsToHudData } from "./stream/stats"
 import "./styles/index"
 import streamChromeStyles from "./styles/stream-chrome.css"
 import { LogLevel, uniffiInitAsync, Logger as UniffiLogger, setLogger as uniffiSetLogger } from "./uniffi/entry"
@@ -237,6 +237,7 @@ class ViewerApp implements Component {
     private screenKeyboard: ScreenKeyboard
 
     private statsDiv = document.createElement("div")
+    private statsValues: Record<keyof StreamStatsHudData, HTMLElement> = {} as Record<keyof StreamStatsHudData, HTMLElement>
     private localTouchCursorDiv = document.createElement("div")
     private stream: Stream
 
@@ -284,17 +285,42 @@ class ViewerApp implements Component {
         // Configure stats element
         this.statsDiv.hidden = true
         this.statsDiv.classList.add("video-stats")
+        this.statsDiv.setAttribute("role", "group")
+        this.statsDiv.setAttribute("aria-label", "Stream statistics")
+
+        const statsGrid = document.createElement("dl")
+        statsGrid.classList.add("video-stats__grid")
+        const statFields: Array<[keyof StreamStatsHudData, string]> = [
+            ["fps", "FPS"],
+            ["latency", "Latency"],
+            ["bitrate", "Bitrate"],
+            ["packetLoss", "Packet loss"],
+            ["resolution", "Resolution"],
+            ["codec", "Codec"],
+        ]
+        for (const [field, label] of statFields) {
+            const row = document.createElement("div")
+            row.classList.add("video-stats__row", `video-stats__row--${field}`)
+            const term = document.createElement("dt")
+            term.textContent = label
+            const value = document.createElement("dd")
+            value.textContent = "—"
+            this.statsValues[field] = value
+            row.append(term, value)
+            statsGrid.appendChild(row)
+        }
+        this.statsDiv.appendChild(statsGrid)
         this.localTouchCursorDiv.hidden = true
         this.localTouchCursorDiv.classList.add("local-touch-cursor")
 
         setInterval(() => {
             // Update stats display every 100ms
             const stats = this.getStream()?.getStats()
-            if (stats && stats.isEnabled()) {
+            const mode = stats?.getMode() ?? "off"
+            if (stats && mode != "off") {
                 this.statsDiv.hidden = false
-
-                const text = streamStatsToText(stats.getCurrentStats())
-                this.statsDiv.innerText = text
+                this.statsDiv.dataset.mode = mode
+                this.renderStats(streamStatsToHudData(stats.getCurrentStats()))
             } else {
                 this.statsDiv.hidden = true
             }
@@ -355,6 +381,13 @@ class ViewerApp implements Component {
             }
         }
     }
+
+    private renderStats(data: StreamStatsHudData): void {
+        for (const field of Object.keys(this.statsValues) as Array<keyof StreamStatsHudData>) {
+            this.statsValues[field].textContent = data[field]
+        }
+    }
+
     private addListeners(element: GlobalEventHandlers) {
         element.addEventListener("keydown", this.onKeyDown.bind(this), { passive: false })
         element.addEventListener("keyup", this.onKeyUp.bind(this), { passive: false })
@@ -1173,12 +1206,14 @@ class ViewerSidebar implements Component, Sidebar, ScreenKeyboardListener {
         this.statsButton.addEventListener("click", () => {
             const stats = this.app.getStream()?.getStats()
             if (stats) {
-                stats.toggle()
-                this.statsButton.setAttribute("aria-pressed", stats.isEnabled() ? "true" : "false")
+                // Session-only cycle: Off → Minimal → Full → Off.
+                const mode = stats.cycleMode()
+                this.updateStatsButton(mode)
             }
         })
         this.setActionButtonContent(this.statsButton, I.stream.stats, I.stream.stats, "stats")
         this.statsButton.setAttribute("aria-pressed", "false")
+        this.statsButton.dataset.statsMode = "off"
         displayActions.appendChild(this.statsButton)
 
         // Scale changes only the rendered stage size; it is reset for every stream.
@@ -1298,6 +1333,13 @@ class ViewerSidebar implements Component, Sidebar, ScreenKeyboardListener {
         button.classList.add("gs-stream-menu__action")
         this.setActionButtonContent(button, label, accessibleLabel, icon)
         return button
+    }
+
+    private updateStatsButton(mode: StreamStatsMode): void {
+        this.statsButton.dataset.statsMode = mode
+        this.statsButton.setAttribute("aria-pressed", mode == "off" ? "false" : "true")
+        this.statsButton.setAttribute("aria-label", `${I.stream.stats} (${mode})`)
+        this.statsButton.title = `${I.stream.stats}: ${mode}`
     }
 
     private setActionButtonContent(button: HTMLButtonElement, label: string, accessibleLabel: string, icon: StreamMenuIcon) {

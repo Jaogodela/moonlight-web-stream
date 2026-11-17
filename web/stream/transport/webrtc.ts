@@ -380,6 +380,10 @@ export class WebRTCTransport implements Transport {
             ) {
                 out.resolution = `Width: ${value?.frameWidth}, Height: ${value?.frameHeight}`
 
+                if (typeof value.bytesReceived == "number") {
+                    out.bytesReceived = value.bytesReceived
+                }
+
                 out.framesDecoded = value?.framesDecoded
                 out.framesDropped = value?.framesDropped
                 out.keyFramesDecoded = value?.keyFramesDecoded
@@ -401,6 +405,12 @@ export class WebRTCTransport implements Transport {
                 }
 
                 out.currentFps = value?.framesPerSecond
+            }
+            if ("type" in value && value.type == "candidate-pair"
+                && value.state == "succeeded" && value.nominated
+                && typeof value.currentRoundTripTime == "number"
+            ) {
+                out.currentRoundTripTimeMs = value.currentRoundTripTime * 1000
             }
             if ("type" in value && "mimeType" in value && typeof value.mimeType == "string"
                 && value.type == "codec" && value.mimeType.startsWith("video/")
