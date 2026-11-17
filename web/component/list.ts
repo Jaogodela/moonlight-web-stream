@@ -35,6 +35,19 @@ export class ListComponent<T extends Component> implements Component {
         this.syncLists()
     }
 
+    setLoading(loading: boolean) {
+        this.listElement.classList.toggle("is-loading", loading)
+        this.listElement.setAttribute("aria-busy", String(loading))
+    }
+
+    setPlaceholder(elements: HTMLLIElement[]) {
+        this.listElement.querySelectorAll(":scope > .gs-list-placeholder").forEach(element => element.remove())
+        for (const element of elements) {
+            element.classList.add("gs-list-placeholder")
+            this.listElement.append(element)
+        }
+    }
+
     private elementAt(index: number): HTMLLIElement {
         let li = this.liElements[index]
         if (!li) {
@@ -44,6 +57,7 @@ export class ListComponent<T extends Component> implements Component {
             this.liElements[index] = li
         }
 
+        li.style.setProperty("--i", String(Math.min(index, 6)))
         return li
     }
 
@@ -100,6 +114,7 @@ export class ListComponent<T extends Component> implements Component {
         }
 
         this.list = newList
+        this.listElement.classList.toggle("is-empty", newList.length === 0)
     }
 
     insert(index: number, value: T) {

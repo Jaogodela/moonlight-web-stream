@@ -106,6 +106,8 @@ class MainApp implements Component {
 
     private hostList: HostList
     private gameList: GameList | null = null
+    private libraryHeader = document.createElement("header")
+    private libraryCount = document.createElement("p")
     private settings: StreamSettingsComponent | null = null
 
     constructor(api: Api, bootstrapRole: DetailedRole) {
@@ -337,6 +339,7 @@ class MainApp implements Component {
             this.actionElement.removeChild(this.settingsButton)
 
             this.gameList?.unmount(this.divElement)
+            this.libraryHeader.remove()
         } else if (this.currentDisplay == "settings") {
             this.actionElement.removeChild(this.backButton)
             if (this.actionElement.contains(this.saveRoleDefaultsButton)) {
@@ -363,6 +366,14 @@ class MainApp implements Component {
                 this.gameList.addForceReloadListener(this.forceFetch.bind(this))
             }
 
+            const libraryTitle = document.createElement("h2")
+            libraryTitle.textContent = I.game.libraryTitle
+            this.libraryHeader.className = "gs-library-header"
+            this.libraryHeader.replaceChildren(libraryTitle, this.libraryCount)
+            this.gameList.setCountListener(count => {
+                this.libraryCount.textContent = I.game.gameCount(count)
+            })
+            this.divElement.append(this.libraryHeader)
             this.gameList.mount(this.divElement)
 
             this.refreshGameListActiveGame()
