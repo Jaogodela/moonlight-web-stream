@@ -6,8 +6,10 @@ export abstract class FormModal<Output> implements Component, Modal<Output | nul
 
     private formElement: HTMLFormElement = document.createElement("form")
     private mounted: boolean = false
-    private submitButton: HTMLButtonElement = document.createElement("button")
-    private cancelButton: HTMLButtonElement = document.createElement("button")
+    protected submitButton: HTMLButtonElement = document.createElement("button")
+    protected cancelButton: HTMLButtonElement = document.createElement("button")
+
+    readonly appearance?: "auth"
 
     constructor() {
         const i = getTranslations(getCurrentLanguage()).modal
@@ -31,11 +33,14 @@ export abstract class FormModal<Output> implements Component, Modal<Output | nul
     mount(parent: Element): void {
         if (!this.mounted) {
             this.mountForm(this.formElement)
-            this.formElement.appendChild(this.submitButton)
-            this.formElement.appendChild(this.cancelButton)
+            const actions = document.createElement("div")
+            actions.classList.add("gs-form__actions")
+            actions.append(this.submitButton, this.cancelButton)
+            this.formElement.appendChild(actions)
             this.mounted = true
         }
 
+        this.submitButton.removeAttribute("aria-busy")
         this.reset()
 
         parent.appendChild(this.formElement)
