@@ -1,8 +1,26 @@
 import type { Translations } from "./en"
 
 export const koKR: Translations = {
+    chrome: {
+        library: "라이브러리",
+        servers: "서버",
+        settings: "설정",
+        play: "플레이",
+        account: "계정",
+        skipLink: "본문으로 건너뛰기",
+        system: "시스템",
+        light: "라이트",
+        dark: "다크",
+        theme: "테마",
+        changeTheme: "테마 변경",
+        login: "로그인",
+        logout: "로그아웃",
+        admin: "관리자",
+        addHost: "서버 추가",
+        navigation: "탐색",
+    },
     index: {
-        appTitle: "Moonlight Web",
+        appTitle: "Gaspar",
         back: "뒤로",
         reload: "새로고침",
         addHostUnreachable: (address: string) => `호스트 "${address}"에 연결할 수 없습니다.`,

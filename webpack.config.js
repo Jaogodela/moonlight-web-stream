@@ -52,24 +52,25 @@ export default {
             template: './web/index.html',
             chunks: ['index'],
             scriptLoading: 'blocking',
-            favicon: "./web/resources/moonlight.svg"
+            favicon: "./web/resources/gaspar.svg"
         }),
         new HtmlWebpackPlugin({
             filename: 'stream.html',
             template: './web/stream.html',
             chunks: ['stream'],
             scriptLoading: 'blocking',
-            favicon: "./web/resources/moonlight.svg"
+            favicon: "./web/resources/gaspar.svg"
         }),
         new HtmlWebpackPlugin({
             filename: 'admin.html',
             template: './web/admin.html',
             chunks: ['admin'],
             scriptLoading: 'blocking',
-            favicon: "./web/resources/moonlight.svg"
+            favicon: "./web/resources/gaspar.svg"
         }),
         new CopyPlugin({
             patterns: [
+                { from: "./web/resources/gaspar*", to: "resources/[name][ext]" },
                 {
                     from: "./web/manifest.json",
                     to: "manifest.json"

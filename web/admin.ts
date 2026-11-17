@@ -1,6 +1,8 @@
+import { icon } from "./component/icon"
+import { Chrome, labelButton } from "./component/chrome"
 import "./polyfill/index"
 import "./styles/index"
-import { Api, apiGetRole, apiGetUser, apiLogout, apiPostRole, apiPostUser, FetchError, getApi } from "./api"
+import { Api, apiGetHosts, apiGetRole, apiGetUser, apiLogout, apiPostRole, apiPostUser, FetchError, getApi } from "./api"
 import { Component, ComponentEvent } from "./component/index"
 import { showNotification } from "./component/notification"
 import { setTouchContextMenuEnabled } from "./polyfill/ios_right_click"
@@ -10,7 +12,7 @@ import { showMessage, showModal } from "./component/modal/index"
 import { buildUrl } from "./config_"
 import { DetailedUserPage } from "./component/user/detailed_page"
 import { User, UserEventListener } from "./component/user/index"
-import { DetailedRole, DetailedUser } from "./api_bindings"
+import { DetailedRole, DetailedUser, DetailedHost, UndetailedHost } from "./api_bindings"
 import { Role, RoleEventListener } from "./component/roles/index"
 import { RoleList } from "./component/roles/list"
 import { DetailedRolePage } from "./component/roles/detailed_page"
@@ -100,9 +102,9 @@ class AdminApp implements Component {
     private currentState: AppState | null = null
 
     // Top Line
-    private topLine = document.createElement("div")
+    private chrome = new Chrome()
+    private topLine = this.chrome.header
 
-    private moonlightTextElement = document.createElement("h1")
 
     private topLineActions = document.createElement("div")
     private logoutButton = document.createElement("button")
@@ -114,7 +116,7 @@ class AdminApp implements Component {
     private rolesTabButton = document.createElement("button")
 
     // Content
-    private content = document.createElement("div")
+    private content = document.createElement("main")
 
     // The actual content of the tabs
     private users: UserPanel | null = null
@@ -123,36 +125,79 @@ class AdminApp implements Component {
     constructor(api: Api) {
         this.api = api
 
-        // Top Line
-        this.topLine.classList.add("top-line")
-
-        this.moonlightTextElement.innerHTML =
-            'Moonlight Web <span style="color:red; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; -webkit-text-stroke: 2px #000">Admin</span>'
-
-        this.topLine.appendChild(this.moonlightTextElement)
-
-        this.topLine.appendChild(this.topLineActions)
-        this.topLineActions.classList.add("top-line-actions")
-
+        this.topLineActions = this.chrome.accountItems
+        labelButton(this.logoutButton, "log-out", I.chrome.logout)
+        labelButton(this.userButton, "library-big", I.chrome.library)
+        const library = document.createElement("a")
+        library.href = buildUrl("/")
+        library.textContent = I.chrome.library
+        const admin = document.createElement("a")
+        admin.href = buildUrl("/admin.html")
+        admin.replaceChildren(icon("shield-check"), document.createTextNode(I.chrome.admin))
+        admin.setAttribute("aria-current", "page")
+        const serverNav = document.createElement("a")
+        serverNav.href = buildUrl("/")
+        serverNav.textContent = I.chrome.servers
+        serverNav.addEventListener("click", () => sessionStorage.setItem("mlState", JSON.stringify({ display: "hosts" })))
+        this.chrome.primary.append(library, serverNav)
+        this.chrome.accountItems.append(admin)
+        this.chrome.selector.hidden = false
+        apiGetHosts(api).then(async hosts => {
+            this.chrome.selector.replaceChildren(...hosts.response.hosts.map((host: DetailedHost | UndetailedHost) => {
+                const option = document.createElement("option")
+                option.value = String(host.host_id)
+                option.textContent = host.name
+                return option
+            }))
+            while (await hosts.next()) { /* Complete the existing host response stream. */ }
+        })
+        this.chrome.selector.addEventListener("change", () => {
+            sessionStorage.setItem("mlState", JSON.stringify({ display: "games", hostId: Number(this.chrome.selector.value) }))
+            window.location.href = buildUrl("/")
+        })
+        const settings = document.createElement("a")
+        settings.href = buildUrl("/")
+        settings.replaceChildren(icon("settings-2"))
+        settings.setAttribute("aria-label", I.chrome.settings)
+        settings.addEventListener("click", () => sessionStorage.setItem("mlState", JSON.stringify({ display: "settings" })))
+        this.chrome.actions.insertBefore(settings, this.chrome.actions.children[2])
+        settings.className = "gs-desktop-settings"
+        const mobilePlay = library.cloneNode(true) as HTMLAnchorElement
+        mobilePlay.replaceChildren(icon("gamepad-2"), document.createTextNode(I.chrome.play))
+        const mobileSettings = settings.cloneNode(true) as HTMLAnchorElement
+        mobileSettings.className = ""
+        mobileSettings.replaceChildren(icon("settings-2"), document.createTextNode(I.chrome.settings))
+        mobileSettings.addEventListener("click", () => sessionStorage.setItem("mlState", JSON.stringify({ display: "settings" })))
+        const servers = document.createElement("a")
+        servers.href = buildUrl("/")
+        servers.replaceChildren(icon("monitor"), document.createTextNode(I.chrome.servers))
+        servers.addEventListener("click", () => sessionStorage.setItem("mlState", JSON.stringify({ display: "hosts" })))
+        this.chrome.bottom.append(mobilePlay, servers, mobileSettings)
+        apiGetUser(api).then(user => this.chrome.setIdentity(user.name, user.role))
         // TODO: logout button doesn't work on default user
         this.logoutButton.addEventListener("click", async () => {
             await apiLogout(this.api)
             window.location.reload()
         })
-        this.logoutButton.classList.add("logout-button")
+
         this.topLineActions.appendChild(this.logoutButton)
 
         this.userButton.addEventListener("click", async () => {
             window.location.href = buildUrl("/")
         })
-        this.userButton.classList.add("user-button")
+
         this.topLineActions.appendChild(this.userButton)
 
         this.root.appendChild(this.topLine)
 
         // Tab div
         this.tabs.classList.add("admin-panel-tabs")
-        this.root.appendChild(this.tabs)
+        this.content.id = "main-content"
+        this.content.tabIndex = -1
+        this.content.classList.add("gs-main")
+        const heading = document.createElement("h1")
+        heading.textContent = I.chrome.admin
+        this.content.append(heading, this.tabs)
 
         // Users tab
         this.userTabButton.innerText = I.admin.users
@@ -170,7 +215,7 @@ class AdminApp implements Component {
 
         // Content div
         this.content.classList.add("admin-panel-content")
-        this.root.appendChild(this.content)
+        this.root.append(this.content, this.chrome.bottom)
     }
 
     async forceFetch() {
