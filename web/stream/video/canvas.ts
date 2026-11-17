@@ -169,7 +169,10 @@ export class BaseCanvasVideoRenderer implements CanvasRenderer {
             throw "Cannot get client bounding rect of OffscreenCanvas!"
         }
 
-        return getStreamRectCorrected(this.canvas.getBoundingClientRect(), this.videoSize)
+        const size: [number, number] = (this.canvas.width > 0 && this.canvas.height > 0)
+            ? [this.canvas.width, this.canvas.height]
+            : this.videoSize
+        return getStreamRectCorrected(this.canvas.getBoundingClientRect(), size)
     }
 
     getBase(): Pipe | null {
