@@ -121,6 +121,7 @@ test("theme tokens produce no axe violations on the source page shell", async ({
   await page.emulateMedia({ colorScheme: "dark" });
   await page.goto(`${baseURL}/web/index.html`);
   await page.addStyleTag({ url: `${baseURL}/web/styles/tokens.css` });
+  await page.addStyleTag({ url: `${baseURL}/web/styles/gaspar.css` });
   const dark = await new AxeBuilder({ page }).withRules(["color-contrast", "button-name"]).analyze();
   expect(dark.violations).toEqual([]);
   await page.evaluate(() => document.documentElement.dataset.theme = "light");

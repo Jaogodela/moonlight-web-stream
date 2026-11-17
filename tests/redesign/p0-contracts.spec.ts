@@ -52,20 +52,18 @@ test("T-UI-06 login exposes the required accessible password toggle and submit o
   expect(login).toMatch(/passwordFile|file/i);
 });
 
-test("T-UI-07 chrome has named theme control, mobile navigation, and accessible page language", async () => {
-  const gasparCss = file("web/styles/gaspar.css");
-  test.skip(!existsSync(gasparCss) || !/(bottomnav|bottom-nav)/i.test(await read("web/styles/gaspar.css")), "T-UI-07 implementation has not landed");
+test("T-UI-07 source wires the shared chrome and supported page languages", async () => {
   const css = await read("web/styles/gaspar.css");
-  const index = await read("web/index.ts");
-  const admin = await read("web/admin.ts");
-  expect(index).toMatch(/aria-label/i);
-  expect(index).toMatch(/theme/i);
-  expect(css).toMatch(/bottomnav|bottom-nav/i);
-  expect(css).toMatch(/max-width:\s*767px|767px/);
-  expect(admin).toMatch(/theme|topbar/i);
+  const chrome = await read("web/component/chrome.ts");
+  const i18n = await read("web/i18n.ts");
+  expect(chrome).toContain('button.setAttribute("aria-label", label)');
+  expect(chrome).toContain('button.className = "gs-icon-btn"');
+  expect(css).toContain(".gs-bottomnav");
+  expect(css).toContain("@media (max-width: 767px)");
+  for (const locale of ["pt-BR", "fr-FR", "ko-KR"]) expect(i18n).toContain(`"${locale}"`);
   for (const page of ["index.html", "admin.html", "stream.html"]) {
     const html = await read(`web/${page}`);
-    expect(html).toContain('lang="');
-    expect(html).toContain("gaspar.theme");
+    expect(html).toContain('lang="en"');
+    expect(html).toContain('localStorage.getItem("gaspar.theme")');
   }
 });
