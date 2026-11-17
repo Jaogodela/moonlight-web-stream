@@ -1,0 +1,16 @@
+# Keep the build context to the sources the image actually needs.
+.git
+.github
+docs
+readme
+target
+node_modules
+dist
+static
+rust_modules
+bindings
+web/uniffi
+web/api_bindings.ts
+server
+*.log
+.DS_Store
