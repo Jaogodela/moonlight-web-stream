@@ -8,6 +8,10 @@ export abstract class FetchListComponent<Data, T extends Component> implements F
         this.list = new ListComponent<T>([], listInit)
     }
 
+    protected setLoading(loading: boolean) {
+        this.list.setLoading(loading)
+    }
+
     protected abstract updateComponentData(component: T, data: Data): void
 
     protected abstract getComponentDataId(component: T): number
