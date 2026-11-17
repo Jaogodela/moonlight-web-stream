@@ -17,10 +17,13 @@ import { emptyKeyModifiers } from "./stream/keyboard"
 import { LogMessageType } from "./stream/log"
 import { streamStatsToText } from "./stream/stats"
 import "./styles/index"
+import streamChromeStyles from "./styles/stream-chrome.css"
 import { LogLevel, uniffiInitAsync, Logger as UniffiLogger, setLogger as uniffiSetLogger } from "./uniffi/entry"
 import { NativeScreenKeyboard } from "./keyboard/native_keyboard"
 import { SimulatedKeyboard } from "./keyboard/simulated_keyboard"
 import { buildUrl } from "./config_"
+
+streamChromeStyles.use()
 
 let I = getTranslations(getCurrentLanguage())
 
@@ -154,6 +157,73 @@ function parseLanguageFromQuery(queryParams: URLSearchParams): Language | undefi
     return language ? normalizeLanguage(language) : undefined
 }
 
+type StreamMenuCopy = {
+    controls: string
+    input: string
+    display: string
+    session: string
+    key: string
+    lock: string
+    scale: string
+    fit: string
+    toggleMenu: string
+    scaleLabel: (percent: number) => string
+}
+
+const streamMenuCopy: Record<Language, StreamMenuCopy> = {
+    en: {
+        controls: "Stream controls", input: "Input", display: "Display", session: "Session",
+        key: "Key", lock: "Lock", scale: "Scale", fit: "Fit", toggleMenu: "Toggle stream controls",
+        scaleLabel: percent => `Video scale ${percent}%`,
+    },
+    "pt-BR": {
+        controls: "Controles do jogo", input: "Entrada", display: "Tela", session: "Sessão",
+        key: "Tecla", lock: "Travar", scale: "Escala", fit: "Ajustar", toggleMenu: "Abrir ou fechar controles do jogo",
+        scaleLabel: percent => `Escala do vídeo ${percent}%`,
+    },
+    "fr-FR": {
+        controls: "Commandes du jeu", input: "Entrée", display: "Affichage", session: "Session",
+        key: "Touche", lock: "Verrou", scale: "Échelle", fit: "Ajuster", toggleMenu: "Afficher ou masquer les commandes",
+        scaleLabel: percent => `Échelle vidéo ${percent}%`,
+    },
+    "zh-CN": {
+        controls: "串流控制", input: "输入", display: "显示", session: "会话",
+        key: "按键", lock: "锁定", scale: "缩放", fit: "适配", toggleMenu: "显示或隐藏串流控制",
+        scaleLabel: percent => `视频缩放 ${percent}%`,
+    },
+    "ko-KR": {
+        controls: "스트림 컨트롤", input: "입력", display: "화면", session: "세션",
+        key: "키", lock: "잠금", scale: "크기", fit: "맞춤", toggleMenu: "스트림 컨트롤 표시 또는 숨기기",
+        scaleLabel: percent => `비디오 크기 ${percent}%`,
+    },
+}
+
+type StreamMenuIcon = "key" | "lock" | "keyboard" | "fullscreen" | "stats" | "exit" | "fit"
+
+const streamMenuIconMarkup: Record<StreamMenuIcon, string> = {
+    key: '<path d="M4 5h16v14H4z"/><path d="M7 9h2m2 0h2m2 0h2M7 12h2m2 0h2m2 0h2M8 15h8"/>',
+    lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/>',
+    keyboard: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M6 10h.01M9 10h.01M12 10h.01M15 10h.01M18 10h.01M7 14h10"/>',
+    fullscreen: '<path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/>',
+    stats: '<path d="M4 19V5m0 14h17"/><path d="m7 15 4-4 3 2 5-6"/>',
+    exit: '<path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/>',
+    fit: '<path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/>',
+}
+
+function createStreamMenuIcon(name: StreamMenuIcon): SVGSVGElement {
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+    icon.setAttribute("viewBox", "0 0 24 24")
+    icon.setAttribute("fill", "none")
+    icon.setAttribute("stroke", "currentColor")
+    icon.setAttribute("stroke-width", "1.8")
+    icon.setAttribute("stroke-linecap", "round")
+    icon.setAttribute("stroke-linejoin", "round")
+    icon.setAttribute("aria-hidden", "true")
+    icon.classList.add("gs-stream-menu__icon")
+    icon.innerHTML = streamMenuIconMarkup[name]
+    return icon
+}
+
 startApp()
 
 class ViewerApp implements Component {
@@ -188,6 +258,7 @@ class ViewerApp implements Component {
     constructor(api: Api, hostId: number, appId: number, bootstrapRole: DetailedRole, options?: Partial<Settings>) {
         this.api = api
         this.div.classList.add("stream-stage")
+        this.div.style.setProperty("--stream-scale", "1")
 
         const defaultSettings = getLocalStreamSettings(bootstrapRole.default_settings)
         const settings = {
@@ -302,6 +373,10 @@ class ViewerApp implements Component {
     }
 
     private async startStream(settings: Settings) {
+        // Display scaling belongs to this ViewerApp instance and always starts fitted.
+        this.setDisplayScale(1)
+        this.sidebar.onScaleChange(1, true)
+
         setSidebarStyle({
             edge: settings.sidebarEdge,
         })
@@ -429,6 +504,11 @@ class ViewerApp implements Component {
 
         this.stream.getInput().setConfig(this.inputConfig)
         this.renderLocalTouchCursor()
+    }
+
+    setDisplayScale(scale: number) {
+        const boundedScale = Math.min(2, Math.max(1, scale))
+        this.div.style.setProperty("--stream-scale", `${boundedScale}`)
     }
 
     // Keyboard
@@ -1022,33 +1102,35 @@ class ViewerSidebar implements Component, Sidebar, ScreenKeyboardListener {
 
     private div = document.createElement("div")
 
-    private buttonDiv = document.createElement("div")
-
-    private sendKeycodeButton = document.createElement("button")
-
-    private keyboardButton = document.createElement("button")
-
-    private lockMouseButton = document.createElement("button")
-    private fullscreenButton = document.createElement("button")
-
+    private scaleOptions: HTMLButtonElement[] = []
+    private scaleOutput = document.createElement("output")
+    private fitScaleButton = document.createElement("button")
     private statsButton = document.createElement("button")
-    private exitStreamButton = document.createElement("button")
 
     private mouseMode: SelectComponent
     private touchMode: SelectComponent
+    private menuCopy: StreamMenuCopy
 
     constructor(app: ViewerApp) {
         this.app = app
+        this.menuCopy = streamMenuCopy[getCurrentLanguage()]
 
-        // -- Configure divs
-        this.div.classList.add("sidebar-stream")
+        // -- Panel heading and grouped actions
+        this.div.classList.add("sidebar-stream", "gs-stream-menu")
+        this.div.setAttribute("aria-label", this.menuCopy.controls)
 
-        this.buttonDiv.classList.add("sidebar-stream-buttons")
-        this.div.appendChild(this.buttonDiv)
+        const title = document.createElement("h2")
+        title.classList.add("gs-stream-menu__title")
+        title.textContent = this.menuCopy.controls
+        this.div.appendChild(title)
+
+        const inputActions = this.createGroup(this.menuCopy.input, "input")
+        const displayActions = this.createGroup(this.menuCopy.display, "display")
+        const sessionActions = this.createGroup(this.menuCopy.session, "session")
 
         // Send keycode
-        this.sendKeycodeButton.innerText = I.stream.sendKeycode
-        this.sendKeycodeButton.addEventListener("click", async () => {
+        const sendKeycodeButton = this.createActionButton(this.menuCopy.key, I.stream.sendKeycode, "key")
+        sendKeycodeButton.addEventListener("click", async () => {
             const key = await showModal(new SendKeycodeModal())
 
             if (key == null) {
@@ -1058,26 +1140,26 @@ class ViewerSidebar implements Component, Sidebar, ScreenKeyboardListener {
             this.app.getStream()?.getInput().sendKey(true, key, emptyKeyModifiers())
             this.app.getStream()?.getInput().sendKey(false, key, emptyKeyModifiers())
         })
-        this.buttonDiv.appendChild(this.sendKeycodeButton)
+        inputActions.appendChild(sendKeycodeButton)
 
         // Pointer Lock
-        this.lockMouseButton.innerText = I.stream.lockMouse
-        this.lockMouseButton.addEventListener("click", async () => {
+        const lockMouseButton = this.createActionButton(this.menuCopy.lock, I.stream.lockMouse, "lock")
+        lockMouseButton.addEventListener("click", async () => {
             await this.app.requestPointerLock(true)
         })
-        this.buttonDiv.appendChild(this.lockMouseButton)
+        inputActions.appendChild(lockMouseButton)
 
         // Screen Keyboard Buttons
-        this.keyboardButton.innerText = I.stream.keyboard
-        this.keyboardButton.addEventListener("click", async () => {
+        const keyboardButton = this.createActionButton(I.stream.keyboard, I.stream.keyboard, "keyboard")
+        keyboardButton.addEventListener("click", async () => {
             setSidebarExtended(false)
             this.app.getScreenKeyboard().setVisible(true)
         })
-        this.buttonDiv.appendChild(this.keyboardButton)
+        inputActions.appendChild(keyboardButton)
 
         // Fullscreen
-        this.fullscreenButton.innerText = I.stream.fullscreen
-        this.fullscreenButton.addEventListener("click", async () => {
+        const fullscreenButton = this.createActionButton(I.stream.fullscreen, I.stream.fullscreen, "fullscreen")
+        fullscreenButton.addEventListener("click", async () => {
             if (this.app.isFullscreen()) {
                 this.app.markManualFullscreenExitRequested()
                 await this.app.exitFullscreen()
@@ -1085,21 +1167,71 @@ class ViewerSidebar implements Component, Sidebar, ScreenKeyboardListener {
                 await this.app.requestFullscreen()
             }
         })
-        this.buttonDiv.appendChild(this.fullscreenButton)
+        displayActions.appendChild(fullscreenButton)
 
         // Stats
-        this.statsButton.innerText = I.stream.stats
         this.statsButton.addEventListener("click", () => {
             const stats = this.app.getStream()?.getStats()
             if (stats) {
                 stats.toggle()
+                this.statsButton.setAttribute("aria-pressed", stats.isEnabled() ? "true" : "false")
             }
         })
-        this.buttonDiv.appendChild(this.statsButton)
+        this.setActionButtonContent(this.statsButton, I.stream.stats, I.stream.stats, "stats")
+        this.statsButton.setAttribute("aria-pressed", "false")
+        displayActions.appendChild(this.statsButton)
+
+        // Scale changes only the rendered stage size; it is reset for every stream.
+        const scaleControl = document.createElement("div")
+        scaleControl.classList.add("gs-stream-menu__scale")
+        const scaleLabel = document.createElement("div")
+        scaleLabel.classList.add("gs-stream-menu__scale-heading")
+        scaleLabel.textContent = this.menuCopy.scale
+        this.scaleOutput.classList.add("gs-stream-menu__scale-value")
+        this.scaleOutput.textContent = "100%"
+        scaleLabel.appendChild(this.scaleOutput)
+        scaleControl.appendChild(scaleLabel)
+
+        const scaleOptions = document.createElement("div")
+        scaleOptions.classList.add("gs-stream-menu__scale-options")
+        scaleOptions.setAttribute("role", "group")
+        scaleOptions.setAttribute("aria-label", this.menuCopy.scale)
+        for (const percent of [100, 125, 150, 175, 200]) {
+            const option = document.createElement("button")
+            option.type = "button"
+            option.classList.add("gs-stream-menu__scale-button")
+            option.textContent = `${percent}%`
+            option.setAttribute("aria-label", this.menuCopy.scaleLabel(percent))
+            option.setAttribute("aria-pressed", "false")
+            option.addEventListener("click", () => {
+                this.app.setDisplayScale(percent / 100)
+                this.onScaleChange(percent / 100, false)
+            })
+            this.scaleOptions.push(option)
+            scaleOptions.appendChild(option)
+        }
+        scaleControl.appendChild(scaleOptions)
+
+        this.fitScaleButton.type = "button"
+        this.fitScaleButton.classList.add("gs-stream-menu__fit-button")
+        this.fitScaleButton.setAttribute("aria-pressed", "false")
+        this.fitScaleButton.setAttribute("aria-label", this.menuCopy.fit)
+        this.fitScaleButton.title = this.menuCopy.fit
+        this.fitScaleButton.appendChild(createStreamMenuIcon("fit"))
+        const fitLabel = document.createElement("span")
+        fitLabel.textContent = this.menuCopy.fit
+        this.fitScaleButton.appendChild(fitLabel)
+        this.fitScaleButton.addEventListener("click", () => {
+            this.app.setDisplayScale(1)
+            this.onScaleChange(1, true)
+        })
+        scaleControl.appendChild(this.fitScaleButton)
+        displayActions.appendChild(scaleControl)
 
         // Close stream
-        this.exitStreamButton.innerText = I.stream.exit
-        this.exitStreamButton.addEventListener("click", async () => {
+        const exitStreamButton = this.createActionButton(I.stream.exit, I.stream.exit, "exit")
+        exitStreamButton.classList.add("gs-stream-menu__action--danger")
+        exitStreamButton.addEventListener("click", async () => {
             const stream = this.app.getStream()
             if (stream) {
                 const success = await stream.stop()
@@ -1110,7 +1242,7 @@ class ViewerSidebar implements Component, Sidebar, ScreenKeyboardListener {
 
             exitStreamPage()
         })
-        this.buttonDiv.appendChild(this.exitStreamButton)
+        sessionActions.appendChild(exitStreamButton)
 
         // Select Mouse Mode
         this.mouseMode = new SelectComponent("mouseMode", [
@@ -1123,7 +1255,7 @@ class ViewerSidebar implements Component, Sidebar, ScreenKeyboardListener {
             preSelectedOption: this.app.getInputConfig().mouseMode
         })
         this.mouseMode.addChangeListener(this.onMouseModeChange.bind(this))
-        this.mouseMode.mount(this.div)
+        this.mouseMode.mount(inputActions)
 
         // Select Touch Mode
         this.touchMode = new SelectComponent("touchMode", [
@@ -1136,7 +1268,60 @@ class ViewerSidebar implements Component, Sidebar, ScreenKeyboardListener {
             preSelectedOption: this.app.getInputConfig().touchMode
         })
         this.touchMode.addChangeListener(this.onTouchModeChange.bind(this))
-        this.touchMode.mount(this.div)
+        this.touchMode.mount(inputActions)
+
+        const toggleButton = document.getElementById("sidebar-button")
+        if (toggleButton) {
+            toggleButton.setAttribute("aria-label", this.menuCopy.toggleMenu)
+            toggleButton.setAttribute("aria-controls", "sidebar-parent")
+        }
+    }
+
+    private createGroup(label: string, name: string): HTMLDivElement {
+        const group = document.createElement("section")
+        group.classList.add("gs-stream-menu__group", `gs-stream-menu__group--${name}`)
+        const heading = document.createElement("h3")
+        heading.classList.add("gs-stream-menu__group-title")
+        heading.textContent = label
+        group.appendChild(heading)
+
+        const actions = document.createElement("div")
+        actions.classList.add("gs-stream-menu__actions")
+        group.appendChild(actions)
+        this.div.appendChild(group)
+        return actions
+    }
+
+    private createActionButton(label: string, accessibleLabel: string, icon: StreamMenuIcon): HTMLButtonElement {
+        const button = document.createElement("button")
+        button.type = "button"
+        button.classList.add("gs-stream-menu__action")
+        this.setActionButtonContent(button, label, accessibleLabel, icon)
+        return button
+    }
+
+    private setActionButtonContent(button: HTMLButtonElement, label: string, accessibleLabel: string, icon: StreamMenuIcon) {
+        button.type = "button"
+        button.classList.add("gs-stream-menu__action")
+        button.setAttribute("aria-label", accessibleLabel)
+        button.title = accessibleLabel
+        button.appendChild(createStreamMenuIcon(icon))
+        const text = document.createElement("span")
+        text.classList.add("gs-stream-menu__action-label")
+        text.textContent = label
+        button.appendChild(text)
+    }
+
+    onScaleChange(scale: number, fit: boolean): void {
+        const percent = Math.round(scale * 100)
+        this.scaleOutput.textContent = `${percent}%`
+        for (const option of this.scaleOptions) {
+            const selected = Number.parseInt(option.textContent ?? "", 10) === percent && !fit
+            option.setAttribute("aria-pressed", selected ? "true" : "false")
+            option.classList.toggle("is-selected", selected)
+        }
+        this.fitScaleButton.setAttribute("aria-pressed", fit ? "true" : "false")
+        this.fitScaleButton.classList.toggle("is-selected", fit)
     }
 
     onCapabilitiesChange(capabilities: StreamCapabilities) {

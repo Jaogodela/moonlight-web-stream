@@ -1,0 +1,354 @@
+/* Stream-only framing and menu chrome. Keep the game stage black in either theme. */
+html.stream,
+body.stream {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #000;
+}
+
+.stream-stage {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: calc(var(--stream-video-middle, 50dvh) - var(--stream-video-height, 100dvh) / 2);
+  height: var(--stream-video-height, 100dvh);
+  background: #000;
+  overflow: hidden;
+  transition: none !important;
+  animation: none !important;
+}
+
+.stream-stage > div:has(> canvas.video-stream) {
+  display: contents;
+}
+
+.stream-stage .video-stream {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  object-position: center;
+  background: transparent;
+  transform: scale(var(--stream-scale, 1));
+  transform-origin: center center;
+  transition: none !important;
+  animation: none !important;
+  outline: none;
+}
+
+.stream .video-stats {
+  position: fixed;
+  z-index: 2;
+  top: calc(12px + env(safe-area-inset-top));
+  left: calc(12px + env(safe-area-inset-left));
+  max-width: min(40vw, 420px);
+  padding: 9px 11px;
+  border: 1px solid var(--gs-hud-border);
+  border-radius: 10px;
+  background: var(--gs-hud-bg);
+  color: var(--gs-hud-text);
+  font-family: var(--gs-font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.45;
+  text-shadow: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  backdrop-filter: blur(10px);
+}
+
+.stream .stream-keyboard-native button {
+  border: 1px solid var(--gs-hud-border);
+  background: var(--gs-hud-bg);
+  color: var(--gs-hud-text);
+  box-shadow: var(--gs-shadow-2);
+}
+
+.stream .sidebar-content:has(.gs-stream-menu) {
+  width: min(344px, calc(100vw - 56px));
+  max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+  border: 1px solid var(--gs-border);
+  border-radius: 18px;
+  background: var(--gs-surface-1);
+  box-shadow: var(--gs-shadow-4);
+  scrollbar-width: thin;
+  scrollbar-color: var(--gs-border-strong) transparent;
+}
+
+.stream .sidebar-background {
+  gap: 8px;
+  transition: transform 180ms ease;
+}
+
+.stream .sidebar-button {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  border: 1px solid var(--gs-border);
+  border-radius: 12px;
+  background: var(--gs-surface-1);
+  box-shadow: var(--gs-shadow-2);
+}
+
+.stream .sidebar-button-image {
+  width: 20px;
+  height: 20px;
+  background: var(--gs-text-2);
+}
+
+.stream .sidebar-show .sidebar-button-image {
+  transform: rotate(180deg);
+}
+
+.gs-stream-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--gs-text);
+}
+
+.gs-stream-menu__title {
+  margin: 0;
+  padding: 2px 2px 10px;
+  border-bottom: 1px solid var(--gs-border-subtle);
+  font-size: 18px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.gs-stream-menu__group {
+  min-width: 0;
+}
+
+.gs-stream-menu__group-title {
+  margin: 0 0 8px;
+  color: var(--gs-text-2);
+  font-family: var(--gs-font-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.gs-stream-menu__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gs-stream-menu__action {
+  display: flex;
+  min-width: 0;
+  min-height: 46px;
+  justify-content: flex-start;
+  gap: 9px;
+  padding: 0 11px;
+  border: 1px solid var(--gs-border);
+  border-radius: 11px;
+  background: var(--gs-surface-2);
+  color: var(--gs-text);
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.gs-stream-menu__action:hover:not(:disabled) {
+  transform: none;
+  border-color: var(--gs-border-strong);
+  background: var(--gs-surface-3);
+  box-shadow: none;
+}
+
+.gs-stream-menu__action:active:not(:disabled) {
+  transform: none;
+  background: var(--gs-state-pressed);
+  box-shadow: none;
+}
+
+.gs-stream-menu__icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.gs-stream-menu__action-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gs-stream-menu__action--danger {
+  border-color: color-mix(in srgb, var(--gs-danger) 28%, var(--gs-border));
+  color: var(--gs-danger);
+}
+
+.gs-stream-menu__action--danger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--gs-danger) 48%, var(--gs-border));
+  background: var(--gs-danger-soft);
+  color: var(--gs-danger);
+}
+
+.gs-stream-menu__group--display .gs-stream-menu__scale {
+  grid-column: 1 / -1;
+}
+
+.gs-stream-menu__scale {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 11px;
+  border: 1px solid var(--gs-border-subtle);
+  border-radius: 12px;
+  background: var(--gs-surface-sunken);
+}
+
+.gs-stream-menu__scale-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--gs-text-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.gs-stream-menu__scale-value {
+  color: var(--gs-text);
+  font-family: var(--gs-font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gs-stream-menu__scale-options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.gs-stream-menu__scale-button {
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 2px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--gs-surface-2);
+  color: var(--gs-text-2);
+  box-shadow: none;
+  font-family: var(--gs-font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.gs-stream-menu__scale-button:hover:not(:disabled) {
+  transform: none;
+  background: var(--gs-surface-3);
+  box-shadow: none;
+}
+
+.gs-stream-menu__scale-button.is-selected,
+.gs-stream-menu__scale-button[aria-pressed="true"] {
+  border-color: var(--gs-accent-soft-border);
+  background: var(--gs-accent-soft);
+  color: var(--gs-accent-text);
+}
+
+.gs-stream-menu__fit-button {
+  min-height: 40px;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--gs-border);
+  border-radius: 9px;
+  background: var(--gs-surface-2);
+  color: var(--gs-text-2);
+  box-shadow: none;
+  font-size: 12px;
+}
+
+.gs-stream-menu__fit-button .gs-stream-menu__icon {
+  width: 16px;
+  height: 16px;
+  flex-basis: 16px;
+}
+
+.gs-stream-menu__fit-button.is-selected,
+.gs-stream-menu__fit-button[aria-pressed="true"] {
+  border-color: var(--gs-border-strong);
+  background: var(--gs-surface-3);
+  color: var(--gs-text);
+}
+
+.gs-stream-menu__fit-button:hover:not(:disabled),
+.gs-stream-menu__scale-button:active:not(:disabled),
+.gs-stream-menu__fit-button:active:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}
+
+.gs-stream-menu__actions > .gs-field,
+.gs-stream-menu__actions > .input-div {
+  grid-column: 1 / -1;
+  min-width: 0;
+  gap: 5px;
+  margin: 2px 0 0;
+}
+
+.gs-stream-menu__actions > .gs-field > label,
+.gs-stream-menu__actions > .input-div > label {
+  color: var(--gs-text-3);
+  font-size: 11px;
+}
+
+.gs-stream-menu :focus-visible {
+  outline: 2px solid var(--gs-text-2);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.gs-stream-menu .select-polyfill-list {
+  z-index: 10;
+}
+
+.stream :where(button, input:not(#input), select, textarea, .select-polyfill-display):focus-visible {
+  outline: 2px solid var(--gs-text-2);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+@media (max-width: 420px) {
+  .stream .sidebar-content:has(.gs-stream-menu) {
+    width: min(336px, calc(100vw - 52px));
+    padding: 13px;
+  }
+
+  .gs-stream-menu {
+    gap: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stream-stage,
+  .stream-stage .video-stream {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .stream .sidebar-background,
+  .gs-stream-menu__action {
+    transition: none;
+  }
+}
