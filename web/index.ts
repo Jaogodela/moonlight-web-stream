@@ -9,6 +9,7 @@ import { showMessage, showModal } from "./component/modal/index"
 import { setContextMenu } from "./component/context_menu"
 import { GameList } from "./component/game/list"
 import { Host } from "./component/host/index"
+import { testHostConnection } from "./component/host/connection_test"
 import { App, DetailedRole, DetailedUser } from "./api_bindings"
 import { getLocalStreamSettings, globalDefaultSettings, setLocalStreamSettings, StreamSettingsComponent } from "./component/settings_menu"
 import { adoptRoleDefaultLanguage, getCurrentLanguage, getTranslations } from "./i18n"
@@ -40,6 +41,8 @@ async function startApp() {
         const lastStateText = sessionStorage.getItem("mlState")
         if (lastStateText) {
             lastAppState = JSON.parse(lastStateText)
+            // Server management is a menu destination; launch back into the library.
+            if (lastAppState?.display === "hosts") lastAppState = null
         }
     }
 
@@ -89,9 +92,7 @@ class MainApp implements Component {
     private pageTitle = document.createElement("h1")
     private main = document.createElement("main")
     private libraryNav = document.createElement("button")
-    private serversNav = document.createElement("button")
     private mobileLibrary = document.createElement("button")
-    private mobileServers = document.createElement("button")
     private mobileSettings = document.createElement("button")
     private lastHostId: number | null = null
     private appearance = document.createElement("div")
@@ -114,6 +115,7 @@ class MainApp implements Component {
 
     // Different submenus
     private currentDisplay: DisplayStates | null = null
+    private appStateWasRestored = false
 
     private hostList: HostList
     private gameList: GameList | null = null
@@ -136,10 +138,9 @@ class MainApp implements Component {
         labelButton(this.saveRoleDefaultsButton, "save", I.settings.saveRoleDefaults)
         this.chrome.actions.insertBefore(this.settingsButton, this.chrome.actions.children[2])
         this.settingsButton.className = "gs-desktop-settings gs-icon-btn"
+        this.libraryNav.type = "button"
         this.libraryNav.textContent = C.library
-        this.serversNav.textContent = C.servers
-        labelButton(this.mobileLibrary, "gamepad-2", C.play)
-        labelButton(this.mobileServers, "monitor", C.servers)
+        labelButton(this.mobileLibrary, "library-big", C.library)
         labelButton(this.mobileSettings, "settings-2", C.settings)
         const openLibrary = () => {
             const id = this.lastHostId != null && this.hostList.getHost(this.lastHostId)
@@ -148,11 +149,18 @@ class MainApp implements Component {
             else this.setCurrentDisplay("hosts")
         }
         for (const button of [this.libraryNav, this.mobileLibrary]) button.addEventListener("click", openLibrary)
-        for (const button of [this.serversNav, this.mobileServers]) button.addEventListener("click", () => this.setCurrentDisplay("hosts"))
         this.mobileSettings.addEventListener("click", () => this.setCurrentDisplay("settings"))
-        this.chrome.primary.append(this.libraryNav, this.serversNav)
-        this.chrome.bottom.append(this.mobileLibrary, this.mobileServers, this.mobileSettings)
-        this.chrome.selector.addEventListener("change", () => this.setCurrentDisplay("games", { hostId: Number(this.chrome.selector.value) }))
+        this.chrome.primary.append(this.libraryNav)
+        this.chrome.bottom.append(this.mobileLibrary, this.mobileSettings)
+        this.chrome.manageServersButton.addEventListener("click", () => this.setCurrentDisplay("hosts"))
+        this.chrome.selector.addEventListener("change", () => {
+            const hostId = Number(this.chrome.selector.value)
+            if (!Number.isFinite(hostId)) return
+            this.lastHostId = hostId
+            this.chrome.resetConnectionTest()
+            this.setCurrentDisplay("games", { hostId })
+        })
+        this.chrome.testConnectionButton.addEventListener("click", () => { void this.testServerConnection() })
         this.pageHeader.className = "gs-page-header"
         this.main.id = "main-content"
         this.main.tabIndex = -1
@@ -218,7 +226,7 @@ class MainApp implements Component {
         this.divElement.appendChild(this.topLine)
         this.divElement.append(this.main, this.chrome.bottom)
 
-        this.setCurrentDisplay("hosts")
+        this.setCurrentDisplay("hosts", null, false)
 
         // Context Menu
         document.body.addEventListener("contextmenu", this.onContextMenu.bind(this), { passive: false })
@@ -226,6 +234,7 @@ class MainApp implements Component {
 
     setAppState(state: AppState, pushIntoHistory?: boolean) {
         if (!state) return
+        this.appStateWasRestored = true
         if (state.display == "hosts") {
             this.setCurrentDisplay("hosts", null, pushIntoHistory)
         } else if (state.display == "games" && state.hostId != null) {
@@ -354,6 +363,7 @@ class MainApp implements Component {
         pushIntoHistory_?: boolean
     ) {
         const pushIntoHistory = pushIntoHistory_ === undefined ? true : pushIntoHistory_
+        if (pushIntoHistory) this.appStateWasRestored = true
 
         if (display == "games" && extraInfo?.hostId == null) {
             // invalid input state
@@ -371,16 +381,17 @@ class MainApp implements Component {
 
         // Unmount the current display
         if (this.currentDisplay == "hosts") {
-            this.actionElement.removeChild(this.hostAddButton)
+            if (this.actionElement.contains(this.hostAddButton)) this.actionElement.removeChild(this.hostAddButton)
+            if (this.actionElement.contains(this.backButton)) this.actionElement.removeChild(this.backButton)
 
             this.hostList.unmount(this.main)
         } else if (this.currentDisplay == "games") {
-            this.actionElement.removeChild(this.backButton)
+            if (this.actionElement.contains(this.backButton)) this.actionElement.removeChild(this.backButton)
 
             this.gameList?.unmount(this.main)
             this.libraryHeader.remove()
         } else if (this.currentDisplay == "settings") {
-            this.actionElement.removeChild(this.backButton)
+            if (this.actionElement.contains(this.backButton)) this.actionElement.removeChild(this.backButton)
             if (this.actionElement.contains(this.saveRoleDefaultsButton)) {
                 this.actionElement.removeChild(this.saveRoleDefaultsButton)
             }
@@ -391,14 +402,13 @@ class MainApp implements Component {
 
         // Mount the new display
         if (display == "hosts") {
+            this.actionElement.appendChild(this.backButton)
             this.actionElement.appendChild(this.hostAddButton)
 
             this.hostList.mount(this.main)
 
             setAppState({ display: "hosts" }, pushIntoHistory)
         } else if (display == "games" && extraInfo?.hostId != null) {
-            this.actionElement.appendChild(this.backButton)
-
             if (this.gameList?.getHostId() != extraInfo?.hostId) {
                 this.gameList = new GameList(this.api, extraInfo?.hostId, extraInfo?.hostCache ?? null)
                 this.gameList.addForceReloadListener(this.forceFetch.bind(this))
@@ -447,8 +457,9 @@ class MainApp implements Component {
         if (this.currentDisplay == "games"
             && this.gameList
             && !this.hostList.getHost(this.gameList.getHostId())) {
-            // The newly fetched list doesn't contain the hosts game view we're in -> go to hosts
-            this.setCurrentDisplay("hosts")
+            const firstHost = this.hostList.getHosts()[0]
+            if (firstHost) this.setCurrentDisplay("games", { hostId: firstHost.getHostId() }, false)
+            else this.setCurrentDisplay("hosts", null, false)
         }
 
         await Promise.all([
@@ -457,30 +468,60 @@ class MainApp implements Component {
             this.refreshGameListActiveGame()
         ])
         this.syncNavigation()
-        if (this.currentDisplay === "hosts" && this.user?.role !== "Admin" && this.hostList.getHosts().length === 1) {
-            this.setCurrentDisplay("games", { hostId: this.hostList.getHosts()[0].getHostId() }, false)
+        const firstHost = this.hostList.getHosts()[0]
+        if (!this.appStateWasRestored && this.currentDisplay === "hosts" && firstHost) {
+            this.setCurrentDisplay("games", { hostId: firstHost.getHostId() }, false)
         }
     }
     private syncNavigation() {
         const hosts = this.hostList.getHosts()
-        const showServers = this.user?.role === "Admin" || hosts.length >= 2
-        this.serversNav.hidden = this.mobileServers.hidden = this.chrome.selector.hidden = !showServers
+        const selectedHostId = this.currentDisplay === "games" ? this.gameList?.getHostId() : this.lastHostId
+        const selectedHost = hosts.find(host => host.getHostId() === selectedHostId) ?? hosts[0]
+        this.chrome.selector.hidden = hosts.length === 0
+        this.chrome.selector.disabled = hosts.length === 0
         this.chrome.selector.replaceChildren(...hosts.map(host => {
             const option = document.createElement("option")
             option.value = String(host.getHostId())
             option.textContent = host.getCache()?.name ?? String(host.getHostId())
-            option.selected = host.getHostId() === this.lastHostId
+            option.selected = host.getHostId() === selectedHost?.getHostId()
             return option
         }))
+        if (selectedHost) {
+            this.chrome.selector.value = String(selectedHost.getHostId())
+            const cache = selectedHost.getCache()
+            const serverState = cache == null ? "unknown" : cache.server_state == null ? "offline" : "online"
+            this.chrome.setServer(cache?.name ?? String(selectedHost.getHostId()), serverState)
+        } else {
+            this.chrome.setServer(I.chrome.serverUnavailable, "unknown")
+        }
+        this.chrome.resetConnectionTest()
         for (const [buttons, active] of [
             [[this.libraryNav, this.mobileLibrary], this.currentDisplay === "games"],
-            [[this.serversNav, this.mobileServers], this.currentDisplay === "hosts"],
             [[this.settingsButton, this.mobileSettings], this.currentDisplay === "settings"]
         ] as const) {
             for (const button of buttons) {
                 if (active) button.setAttribute("aria-current", "page")
                 else button.removeAttribute("aria-current")
             }
+        }
+    }
+    private async testServerConnection() {
+        const hostId = Number(this.chrome.selector.value)
+        if (!Number.isFinite(hostId)) return
+        this.chrome.setConnectionTestState("testing")
+        try {
+            const result = await testHostConnection(this.api, hostId)
+            const format = (value: number) => new Intl.NumberFormat(getCurrentLanguage(), {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+            }).format(value)
+            this.chrome.setConnectionTestState("success", I.chrome.connectionResult(
+                format(result.averageMs),
+                format(result.minimumMs),
+                format(result.jitterMs),
+            ))
+        } catch {
+            this.chrome.setConnectionTestState("failure", I.chrome.connectionFailed)
         }
     }
     private async refreshUserRole() {

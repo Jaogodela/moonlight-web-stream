@@ -144,12 +144,13 @@ export class StreamSettingsComponent implements Component {
     private permissions: StreamPermissions
 
     private divElement: HTMLDivElement = document.createElement("div")
+    private settingTabs: HTMLDivElement = document.createElement("div")
+    private settingSections = new Map<string, { tab: HTMLButtonElement, panel: HTMLDivElement }>()
 
     private sidebarHeader: HTMLHeadingElement = document.createElement("h3")
     private sidebarEdge: SelectComponent
     private hideSidebarButton: InputComponent
 
-    private streamHeader: HTMLHeadingElement = document.createElement("h3")
     private bitrate: InputComponent
     private fps: InputComponent
     private videoCodec: SelectComponent
@@ -162,10 +163,8 @@ export class StreamSettingsComponent implements Component {
     private videoSizeWidth: InputComponent
     private videoSizeHeight: InputComponent
 
-    private audioHeader: HTMLHeadingElement = document.createElement("h3")
     private playAudioLocal: InputComponent
 
-    private microphoneHeader: HTMLHeadingElement = document.createElement("h3")
     private microphone: InputComponent
 
     private mouseHeader: HTMLHeadingElement = document.createElement("h3")
@@ -204,11 +203,21 @@ export class StreamSettingsComponent implements Component {
         const streamI = translations.stream
 
         // Root div
-        this.divElement.classList.add("settings")
+        this.divElement.classList.add("settings", "gs-settings")
+        this.settingTabs.className = "gs-settings-tabs"
+        this.settingTabs.setAttribute("role", "tablist")
+        this.settingTabs.setAttribute("aria-label", translations.chrome.settings)
+        this.divElement.appendChild(this.settingTabs)
+
+        const videoSection = this.createSettingsSection("video", i.video, true)
+        const audioSection = this.createSettingsSection("audio", i.audio)
+        const inputSection = this.createSettingsSection("input", i.input)
+        const networkSection = this.createSettingsSection("network", i.network)
+        const advancedSection = this.createSettingsSection("advanced", i.advanced)
 
         // Sidebar
         this.sidebarHeader.innerText = i.sidebar
-        this.divElement.appendChild(this.sidebarHeader)
+        advancedSection.appendChild(this.sidebarHeader)
 
         this.sidebarEdge = new SelectComponent("sidebarEdge", [
             { value: "left", name: i.left },
@@ -220,17 +229,13 @@ export class StreamSettingsComponent implements Component {
             preSelectedOption: settings?.sidebarEdge ?? defaultSettings_.sidebarEdge,
         })
         this.sidebarEdge.addChangeListener(this.onSettingsChange.bind(this))
-        this.sidebarEdge.mount(this.divElement)
+        this.sidebarEdge.mount(advancedSection)
 
         this.hideSidebarButton = new InputComponent("hideSidebarButton", "checkbox", i.hideSidebarButton, {
             checked: settings?.hideSidebarButton ?? defaultSettings_.hideSidebarButton
         })
         this.hideSidebarButton.addChangeListener(this.onSettingsChange.bind(this))
-        this.hideSidebarButton.mount(this.divElement)
-
-        // Video
-        this.streamHeader.innerText = i.video
-        this.divElement.appendChild(this.streamHeader)
+        this.hideSidebarButton.mount(advancedSection)
 
         // Bitrate
         this.bitrate = new InputComponent("bitrate", "number", i.bitrate, {
@@ -244,7 +249,7 @@ export class StreamSettingsComponent implements Component {
             }
         })
         this.bitrate.addChangeListener(this.onSettingsChange.bind(this))
-        this.bitrate.mount(this.divElement)
+        this.bitrate.mount(videoSection)
 
         // Fps
         this.fps = new InputComponent("fps", "number", i.fps, {
@@ -253,7 +258,7 @@ export class StreamSettingsComponent implements Component {
             step: "100"
         })
         this.fps.addChangeListener(this.onSettingsChange.bind(this))
-        this.fps.mount(this.divElement)
+        this.fps.mount(videoSection)
 
         // Video Size
         this.videoSize = new SelectComponent("videoSize",
@@ -271,21 +276,21 @@ export class StreamSettingsComponent implements Component {
             }
         )
         this.videoSize.addChangeListener(this.onSettingsChange.bind(this))
-        this.videoSize.mount(this.divElement)
+        this.videoSize.mount(videoSection)
 
         this.videoSizeWidth = new InputComponent("videoSizeWidth", "number", i.videoWidth, {
             defaultValue: defaultSettings_.videoSizeCustom.width.toString(),
             value: settings?.videoSizeCustom?.width.toString()
         })
         this.videoSizeWidth.addChangeListener(this.onSettingsChange.bind(this))
-        this.videoSizeWidth.mount(this.divElement)
+        this.videoSizeWidth.mount(videoSection)
 
         this.videoSizeHeight = new InputComponent("videoSizeHeight", "number", i.videoHeight, {
             defaultValue: defaultSettings_.videoSizeCustom.height.toString(),
             value: settings?.videoSizeCustom?.height.toString()
         })
         this.videoSizeHeight.addChangeListener(this.onSettingsChange.bind(this))
-        this.videoSizeHeight.mount(this.divElement)
+        this.videoSizeHeight.mount(videoSection)
 
         // Codec
         const allowedVideoCodecs = [
@@ -312,14 +317,14 @@ export class StreamSettingsComponent implements Component {
             preSelectedOption: settings?.videoCodec ?? defaultSettings_.videoCodec
         })
         this.videoCodec.addChangeListener(this.onSettingsChange.bind(this))
-        this.videoCodec.mount(this.divElement)
+        this.videoCodec.mount(videoSection)
 
         // Force Video Element renderer
         this.forceVideoElementRenderer = new InputComponent("forceVideoElementRenderer", "checkbox", i.forceVideoElementRenderer, {
             checked: settings?.forceVideoElementRenderer ?? defaultSettings_.forceVideoElementRenderer
         })
         this.forceVideoElementRenderer.addChangeListener(this.onSettingsChange.bind(this))
-        this.forceVideoElementRenderer.mount(this.divElement)
+        this.forceVideoElementRenderer.mount(videoSection)
 
         // Use Canvas Renderer
         this.canvasRenderer = new InputComponent("canvasRenderer", "checkbox", i.useCanvasRenderer, {
@@ -327,50 +332,43 @@ export class StreamSettingsComponent implements Component {
             checked: settings === null || settings === void 0 ? void 0 : settings.canvasRenderer
         })
         this.canvasRenderer.addChangeListener(this.onSettingsChange.bind(this))
-        this.canvasRenderer.mount(this.divElement)
+        this.canvasRenderer.mount(videoSection)
 
         // Canvas VSync (Canvas only: sync draw to display refresh to reduce tearing; off = lower latency)
         this.canvasVsync = new InputComponent("canvasVsync", "checkbox", i.canvasVsync, {
             checked: settings?.canvasVsync ?? defaultSettings_.canvasVsync
         })
         this.canvasVsync.addChangeListener(this.onSettingsChange.bind(this))
-        this.canvasVsync.mount(this.divElement)
+        this.canvasVsync.mount(videoSection)
 
         // HDR
         this.hdr = new InputComponent("hdr", "checkbox", i.enableHdr, {
             checked: settings?.hdr ?? defaultSettings_.hdr
         })
         this.hdr.addChangeListener(this.onSettingsChange.bind(this))
-        this.hdr.mount(this.divElement)
+        this.hdr.mount(videoSection)
 
         if (!this.permissions.allow_hdr) {
             this.hdr.setChecked(false)
             this.hdr.setEnabled(false)
         }
 
-        // Audio local
-        this.audioHeader.innerText = i.audio
-        this.divElement.appendChild(this.audioHeader)
-
+        // Audio
         this.playAudioLocal = new InputComponent("playAudioLocal", "checkbox", i.playAudioLocal, {
             checked: settings?.playAudioLocal
         })
         this.playAudioLocal.addChangeListener(this.onSettingsChange.bind(this))
-        this.playAudioLocal.mount(this.divElement)
-
-        // Microphone
-        this.microphoneHeader.innerText = i.microphone
-        this.divElement.appendChild(this.microphoneHeader)
+        this.playAudioLocal.mount(audioSection)
 
         this.microphone = new InputComponent("microphone", "checkbox", i.microphoneEnabled, {
             checked: settings?.microphone
         })
         this.microphone.addChangeListener(this.onSettingsChange.bind(this))
-        this.microphone.mount(this.divElement)
+        this.microphone.mount(audioSection)
 
         // Mouse
         this.mouseHeader.innerText = i.mouse
-        this.divElement.appendChild(this.mouseHeader)
+        inputSection.appendChild(this.mouseHeader)
 
         this.mouseScrollMode = new SelectComponent("mouseScrollMode",
             [
@@ -383,7 +381,7 @@ export class StreamSettingsComponent implements Component {
             }
         )
         this.mouseScrollMode.addChangeListener(this.onSettingsChange.bind(this))
-        this.mouseScrollMode.mount(this.divElement)
+        this.mouseScrollMode.mount(inputSection)
 
         this.mouseMode = new SelectComponent("mouseMode",
             [
@@ -398,7 +396,7 @@ export class StreamSettingsComponent implements Component {
             }
         )
         this.mouseMode.addChangeListener(this.onSettingsChange.bind(this))
-        this.mouseMode.mount(this.divElement)
+        this.mouseMode.mount(inputSection)
 
         this.touchMode = new SelectComponent("touchMode",
             [
@@ -413,7 +411,7 @@ export class StreamSettingsComponent implements Component {
             }
         )
         this.touchMode.addChangeListener(this.onSettingsChange.bind(this))
-        this.touchMode.mount(this.divElement)
+        this.touchMode.mount(inputSection)
 
         this.localCursorSensitivity = new InputComponent("localCursorSensitivity", "number", i.localCursorSensitivity, {
             defaultValue: defaultSettings_.localCursorSensitivity.toString(),
@@ -425,7 +423,7 @@ export class StreamSettingsComponent implements Component {
             }
         })
         this.localCursorSensitivity.addChangeListener(this.onSettingsChange.bind(this))
-        this.localCursorSensitivity.mount(this.divElement)
+        this.localCursorSensitivity.mount(inputSection)
 
         // Controller
         if (window.isSecureContext) {
@@ -433,19 +431,19 @@ export class StreamSettingsComponent implements Component {
         } else {
             this.controllerHeader.innerText = i.controllerDisabled
         }
-        this.divElement.appendChild(this.controllerHeader)
+        inputSection.appendChild(this.controllerHeader)
 
         this.controllerInvertAB = new InputComponent("controllerInvertAB", "checkbox", i.invertAB, {
             checked: settings?.controllerConfig?.invertAB
         })
         this.controllerInvertAB.addChangeListener(this.onSettingsChange.bind(this))
-        this.controllerInvertAB.mount(this.divElement)
+        this.controllerInvertAB.mount(inputSection)
 
         this.controllerInvertXY = new InputComponent("controllerInvertXY", "checkbox", i.invertXY, {
             checked: settings?.controllerConfig?.invertXY
         })
         this.controllerInvertXY.addChangeListener(this.onSettingsChange.bind(this))
-        this.controllerInvertXY.mount(this.divElement)
+        this.controllerInvertXY.mount(inputSection)
 
         // Controller Send Interval
         this.controllerSendIntervalOverride = new InputComponent("controllerSendIntervalOverride", "number", i.overrideControllerInterval, {
@@ -459,7 +457,7 @@ export class StreamSettingsComponent implements Component {
         })
         this.controllerSendIntervalOverride.setEnabled(settings?.controllerConfig?.sendIntervalOverride != null)
         this.controllerSendIntervalOverride.addChangeListener(this.onSettingsChange.bind(this))
-        this.controllerSendIntervalOverride.mount(this.divElement)
+        this.controllerSendIntervalOverride.mount(inputSection)
 
         if (!window.isSecureContext) {
             this.controllerInvertAB.setEnabled(false)
@@ -468,7 +466,7 @@ export class StreamSettingsComponent implements Component {
 
         // Other
         this.otherHeader.innerText = i.other
-        this.divElement.appendChild(this.otherHeader)
+        advancedSection.appendChild(this.otherHeader)
 
         // Data Transport
         const allowedDataTransport = [
@@ -490,27 +488,27 @@ export class StreamSettingsComponent implements Component {
             preSelectedOption: language
         })
         this.language.addChangeListener(this.onSettingsChange.bind(this))
-        this.language.mount(this.divElement)
+        this.language.mount(advancedSection)
 
         this.dataTransport = new SelectComponent("transport", allowedDataTransport, {
             displayName: i.dataTransport,
             preSelectedOption: settings?.dataTransport ?? defaultSettings_.dataTransport
         })
         this.dataTransport.addChangeListener(this.onSettingsChange.bind(this))
-        this.dataTransport.mount(this.divElement)
+        this.dataTransport.mount(networkSection)
 
         this.enterFullscreenOnStreamStart = new InputComponent("enterFullscreenOnStreamStart", "checkbox", i.enterFullscreenOnStreamStart, {
             checked: settings?.enterFullscreenOnStreamStart ?? defaultSettings_.enterFullscreenOnStreamStart
         })
         this.enterFullscreenOnStreamStart.addChangeListener(this.onSettingsChange.bind(this))
-        this.enterFullscreenOnStreamStart.mount(this.divElement)
+        this.enterFullscreenOnStreamStart.mount(advancedSection)
 
         // Fullscreen Keybind
         this.toggleFullscreenWithKeybind = new InputComponent("toggleFullscreenWithKeybind", "checkbox", i.toggleFullscreenWithKeybind, {
             checked: settings?.toggleFullscreenWithKeybind
         })
         this.toggleFullscreenWithKeybind.addChangeListener(this.onSettingsChange.bind(this))
-        this.toggleFullscreenWithKeybind.mount(this.divElement)
+        this.toggleFullscreenWithKeybind.mount(advancedSection)
 
         // Page Style
         this.pageStyle = new SelectComponent("pageStyle", [
@@ -521,16 +519,61 @@ export class StreamSettingsComponent implements Component {
             preSelectedOption: settings?.pageStyle ?? defaultSettings_.pageStyle
         })
         this.pageStyle.addChangeListener(this.onSettingsChange.bind(this))
-        this.pageStyle.mount(this.divElement)
+        this.pageStyle.mount(advancedSection)
 
         // Custom Select Element
         this.useSelectElementPolyfill = new InputComponent("useSelectElementPolyfill", "checkbox", i.useCustomDropdown, {
             checked: settings?.useSelectElementPolyfill ?? defaultSettings_.useSelectElementPolyfill
         })
         this.useSelectElementPolyfill.addChangeListener(this.onSettingsChange.bind(this))
-        this.useSelectElementPolyfill.mount(this.divElement)
+        this.useSelectElementPolyfill.mount(advancedSection)
 
         this.onSettingsChange()
+    }
+
+    private createSettingsSection(key: string, label: string, selected = false): HTMLDivElement {
+        const tab = document.createElement("button")
+        tab.type = "button"
+        tab.id = `gs-settings-tab-${key}`
+        tab.setAttribute("role", "tab")
+        tab.setAttribute("aria-controls", `gs-settings-panel-${key}`)
+        tab.setAttribute("aria-selected", String(selected))
+        tab.tabIndex = selected ? 0 : -1
+        tab.textContent = label
+
+        const panel = document.createElement("div")
+        panel.id = `gs-settings-panel-${key}`
+        panel.className = "gs-settings-panel"
+        panel.setAttribute("role", "tabpanel")
+        panel.setAttribute("aria-labelledby", tab.id)
+        panel.hidden = !selected
+
+        tab.addEventListener("click", () => this.activateSettingsSection(key))
+        tab.addEventListener("keydown", event => {
+            if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return
+            event.preventDefault()
+            const tabs = [...this.settingTabs.querySelectorAll<HTMLButtonElement>("[role=tab]")]
+            const index = tabs.indexOf(tab)
+            const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 :
+                (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length
+            tabs[nextIndex]?.focus()
+            const sectionKey = [...this.settingSections.entries()].find(([, section]) => section.tab === tabs[nextIndex])?.[0]
+            if (sectionKey) this.activateSettingsSection(sectionKey)
+        })
+
+        this.settingTabs.appendChild(tab)
+        this.divElement.appendChild(panel)
+        this.settingSections.set(key, { tab, panel })
+        return panel
+    }
+
+    private activateSettingsSection(key: string) {
+        for (const [sectionKey, section] of this.settingSections) {
+            const selected = sectionKey === key
+            section.tab.setAttribute("aria-selected", String(selected))
+            section.tab.tabIndex = selected ? 0 : -1
+            section.panel.hidden = !selected
+        }
     }
 
     private onSettingsChange() {

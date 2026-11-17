@@ -12,6 +12,7 @@ import { showMessage, showModal } from "./component/modal/index"
 import { buildUrl } from "./config_"
 import { DetailedUserPage } from "./component/user/detailed_page"
 import { User, UserEventListener } from "./component/user/index"
+import { testHostConnection } from "./component/host/connection_test"
 import { DetailedRole, DetailedUser, DetailedHost, UndetailedHost } from "./api_bindings"
 import { Role, RoleEventListener } from "./component/roles/index"
 import { RoleList } from "./component/roles/list"
@@ -135,13 +136,13 @@ class AdminApp implements Component {
         admin.href = buildUrl("/admin.html")
         admin.replaceChildren(icon("shield-check"), document.createTextNode(I.chrome.admin))
         admin.setAttribute("aria-current", "page")
-        const serverNav = document.createElement("a")
-        serverNav.href = buildUrl("/")
-        serverNav.textContent = I.chrome.servers
-        serverNav.addEventListener("click", () => sessionStorage.setItem("mlState", JSON.stringify({ display: "hosts" })))
-        this.chrome.primary.append(library, serverNav)
+        this.chrome.primary.append(library)
         this.chrome.accountItems.append(admin)
-        this.chrome.selector.hidden = false
+        this.chrome.manageServersButton.addEventListener("click", () => {
+            sessionStorage.setItem("mlState", JSON.stringify({ display: "hosts" }))
+            window.location.href = buildUrl("/")
+        })
+        this.chrome.testConnectionButton.addEventListener("click", () => { void this.testServerConnection() })
         apiGetHosts(api).then(async hosts => {
             this.chrome.selector.replaceChildren(...hosts.response.hosts.map((host: DetailedHost | UndetailedHost) => {
                 const option = document.createElement("option")
@@ -149,6 +150,10 @@ class AdminApp implements Component {
                 option.textContent = host.name
                 return option
             }))
+            this.chrome.selector.hidden = hosts.response.hosts.length === 0
+            const initialHost = hosts.response.hosts[0]
+            if (initialHost) this.chrome.setServer(initialHost.name, initialHost.server_state == null ? "offline" : "online")
+            this.chrome.resetConnectionTest()
             while (await hosts.next()) { /* Complete the existing host response stream. */ }
         })
         this.chrome.selector.addEventListener("change", () => {
@@ -163,16 +168,12 @@ class AdminApp implements Component {
         this.chrome.actions.insertBefore(settings, this.chrome.actions.children[2])
         settings.className = "gs-desktop-settings"
         const mobilePlay = library.cloneNode(true) as HTMLAnchorElement
-        mobilePlay.replaceChildren(icon("gamepad-2"), document.createTextNode(I.chrome.play))
+        mobilePlay.replaceChildren(icon("library-big"), document.createTextNode(I.chrome.library))
         const mobileSettings = settings.cloneNode(true) as HTMLAnchorElement
         mobileSettings.className = ""
         mobileSettings.replaceChildren(icon("settings-2"), document.createTextNode(I.chrome.settings))
         mobileSettings.addEventListener("click", () => sessionStorage.setItem("mlState", JSON.stringify({ display: "settings" })))
-        const servers = document.createElement("a")
-        servers.href = buildUrl("/")
-        servers.replaceChildren(icon("monitor"), document.createTextNode(I.chrome.servers))
-        servers.addEventListener("click", () => sessionStorage.setItem("mlState", JSON.stringify({ display: "hosts" })))
-        this.chrome.bottom.append(mobilePlay, servers, mobileSettings)
+        this.chrome.bottom.append(mobilePlay, mobileSettings)
         apiGetUser(api).then(user => this.chrome.setIdentity(user.name, user.role))
         // TODO: logout button doesn't work on default user
         this.logoutButton.addEventListener("click", async () => {
@@ -216,6 +217,24 @@ class AdminApp implements Component {
         // Content div
         this.content.classList.add("admin-panel-content")
         this.root.append(this.content, this.chrome.bottom)
+    }
+
+    private async testServerConnection() {
+        const hostId = Number(this.chrome.selector.value)
+        if (!Number.isFinite(hostId)) return
+        this.chrome.setConnectionTestState("testing")
+        try {
+            const result = await testHostConnection(this.api, hostId)
+            const format = (value: number) => new Intl.NumberFormat(getCurrentLanguage(), {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+            }).format(value)
+            this.chrome.setConnectionTestState("success", I.chrome.connectionResult(
+                format(result.averageMs), format(result.minimumMs), format(result.jitterMs)
+            ))
+        } catch {
+            this.chrome.setConnectionTestState("failure", I.chrome.connectionFailed)
+        }
     }
 
     async forceFetch() {
