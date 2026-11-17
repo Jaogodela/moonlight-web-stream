@@ -188,10 +188,10 @@
 
 
 :root {
-  --gs-font-display: "Bricolage Grotesque", "Geist", ui-sans-serif, system-ui, sans-serif;
-  --gs-font-text:    "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+  --gs-font-display: "Bricolage Grotesque", "Bricolage Grotesque Fallback", "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --gs-font-text:    "Geist", "Geist Fallback", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
                      "Noto Sans", "PingFang SC", "Noto Sans KR", sans-serif;
-  --gs-font-mono:    "Geist Mono", ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, monospace;
+  --gs-font-mono:    "Geist Mono", "Geist Mono Fallback", ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, monospace;
 
   /* Escala (base 16px; ratio ~1.2 até lg, ~1.25 acima) — tamanho / altura de linha */
   --gs-text-2xs: 0.6875rem; --gs-leading-2xs: 1rem;      /* 11px  overline, badges */
