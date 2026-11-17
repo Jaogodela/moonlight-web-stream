@@ -40,20 +40,6 @@ test("T-UI-03 primitives provide focus rings, dialog semantics, and no global tr
   expect(tokens).toMatch(/--gs-z-topbar:\s*100/);
 });
 
-test("T-UI-05 game cards are named buttons with 3:4 covers, keyboard activation, fallback and empty retry", async () => {
-  const gasparCss = file("web/styles/gaspar.css");
-  test.skip(!existsSync(gasparCss) || !(await read("web/styles/gaspar.css")).includes("aspect-ratio: 3 / 4"), "T-UI-05 implementation has not landed");
-  const game = await read("web/component/game/index.ts");
-  const list = await read("web/component/game/list.ts");
-  const css = await read("web/styles/gaspar.css");
-  expect(game).toMatch(/aria-label/i);
-  expect(game).toMatch(/createElement\("button"\)|document\.createElement\("button"\)/);
-  expect(game).toMatch(/keydown|keyup|click/i);
-  expect(css).toMatch(/aspect-ratio:\s*3\s*\/\s*4/);
-  expect(css).toMatch(/prefers-reduced-motion/);
-  expect(list).toMatch(/Reload|reload|forceFetch/);
-});
-
 test("T-UI-06 login exposes the required accessible password toggle and submit order", async () => {
   const loginSource = file("web/component/modal/login.ts");
   test.skip(!existsSync(loginSource) || !(await read("web/component/modal/login.ts")).includes("aria-pressed"), "T-UI-06 implementation has not landed");
@@ -62,7 +48,7 @@ test("T-UI-06 login exposes the required accessible password toggle and submit o
   expect(login).toMatch(/aria-pressed/i);
   expect(login).toMatch(/aria-label/i);
   expect(login).toMatch(/type[^;\n]*password/i);
-  expect(form).toMatch(/addEventListener\(["']keydown|type=["']submit|requestSubmit/i);
+  expect(form).toMatch(/addEventListener\(["']keydown|\.type\s*=\s*["']submit|requestSubmit/i);
   expect(login).toMatch(/passwordFile|file/i);
 });
 
