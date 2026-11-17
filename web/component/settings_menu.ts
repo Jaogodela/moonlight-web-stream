@@ -188,13 +188,15 @@ export class StreamSettingsComponent implements Component {
 
     private useSelectElementPolyfill: InputComponent
 
-    constructor(permissions: StreamPermissions, settings: Settings) {
+    constructor(permissions: StreamPermissions, settings: Settings | null | undefined) {
         // Sometimes the normal settings object doesn't have some values, because they change between versions.
         // Use those as fallback
         const defaultSettings_ = globalDefaultSettings()
 
         makeSettingsValid(permissions, defaultSettings_)
-        makeSettingsValid(permissions, settings)
+        const resolvedSettings: Settings = deepMerge(deepClone(defaultSettings_), settings ?? {})
+        makeSettingsValid(permissions, resolvedSettings)
+        settings = resolvedSettings
 
         this.permissions = permissions
         const language = normalizeLanguage(settings?.language ?? defaultSettings_.language)
