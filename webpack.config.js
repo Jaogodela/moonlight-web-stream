@@ -37,7 +37,7 @@ export default {
                 ]
             },
             {
-                test: /\.(png|svg|jpg|jpeg|gif)$/i,
+                test: /\.(png|svg|jpg|jpeg|gif|woff2)$/i,
                 type: 'asset/resource',
             },
             {

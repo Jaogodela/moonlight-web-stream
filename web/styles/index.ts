@@ -1,4 +1,5 @@
 import tokens from "./tokens.css";
+import fonts from "./fonts.css";
 import "./theme";
 import { globalDefaultSettings, getLocalStreamSettings } from "../component/settings_menu"
 
@@ -30,6 +31,7 @@ export function getStyle(): PageStyle {
 }
 
 tokens.use()
+fonts.use()
 
 const settings = getLocalStreamSettings(globalDefaultSettings())
 
