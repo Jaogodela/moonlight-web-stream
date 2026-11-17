@@ -66,3 +66,8 @@ test("T-UI-03 dialog receives focus, traps Tab, and restores trigger focus", asy
   await expect(page.locator("#dialog-trigger")).toBeFocused();
   await expect(page.locator("#modal-overlay")).toHaveClass(/modal-disabled/);
 });
+
+test.skip("T-UI-03 axe contrast on login, library, and settings in both themes", async () => {
+  // These screens are rendered by the generated Webpack client, which needs the
+  // Rust bindings absent from this source-only checkout.
+});
