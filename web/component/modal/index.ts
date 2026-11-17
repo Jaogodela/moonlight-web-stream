@@ -4,6 +4,7 @@ import { getCurrentLanguage, getTranslations } from "../../i18n"
 import { FormModal } from "./form"
 
 export interface Modal<Output> extends Component {
+    readonly appearance?: "auth"
     onFinish(abort: AbortSignal): Promise<Output>
 }
 
@@ -38,6 +39,8 @@ export async function showModal<Output>(modal: Modal<Output> | null): Promise<Ou
     if (previousModal) previousModal.unmount(modalParent)
     previousModal = modal
     modalAbort = null
+    modalParent.classList.toggle("modal-content--auth", modal?.appearance === "auth")
+    modalBackground?.classList.toggle("modal-background--auth", modal?.appearance === "auth")
     if (!modal) {
         modalBackground?.classList.add("modal-disabled")
         modalTrigger?.focus()
