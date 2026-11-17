@@ -117,9 +117,10 @@ input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border: 1px sol
 body:not(.stream) > #root { width: 100%; max-width: none; padding: 0; margin: 0; }
 .top-line, .top-line-actions, .actions-list { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .top-line { justify-content: space-between; } .top-line-actions { margin-left: auto; }
-.host-list { display: flex; flex-wrap: wrap; gap: 10px; }
-.host-element { padding: 16px; border: 1px solid var(--gs-border); border-radius: var(--gs-radius-lg); background: var(--gs-surface-1); cursor: pointer; }
-.host-image { width: 5cm; } .host-name { margin: 8px 0; text-align: center; }
+.host-list { display: grid; grid-template-columns: repeat(auto-fill, 240px); gap: 10px; }
+.host-element { width: 240px; min-width: 0; padding: 16px; border: 1px solid var(--gs-border); border-radius: var(--gs-radius-lg); background: var(--gs-surface-1); cursor: pointer; }
+.host-element > div { min-width: 0; max-width: 100%; }
+.host-image { width: 5cm; } .host-name { max-width: 100%; margin: 8px 0; overflow-wrap: anywhere; text-align: center; }
 [data-theme="light"] .host-image, [data-theme="light"] .host-image-overlay { filter: brightness(0); }
 .user-panel, .role-panel { display: flex; flex-direction: column; max-width: 225px; }
 .user-list, .role-list { display: flex; flex-direction: column; overflow: auto; }
