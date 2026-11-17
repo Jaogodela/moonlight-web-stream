@@ -1,5 +1,6 @@
 import { Component } from "./index"
-import { ERROR_IMAGE, INFO_IMAGE, WARN_IMAGE } from "../resources/index"
+import { icon } from "./icon"
+import { getCurrentLanguage, getTranslations } from "../i18n"
 import { ListComponent } from "./list"
 
 type NotificationLevel = "error" | "warn" | "info"
@@ -26,16 +27,7 @@ export function showNotification(message: string, level: NotificationLevel = "er
         return;
     }
 
-    let error: NotificationComponent
-    if (level == "error") {
-        error = new NotificationComponent(message, ERROR_IMAGE)
-    } else if (level == "warn") {
-        error = new NotificationComponent(message, WARN_IMAGE)
-    } else if (level = "info") {
-        error = new NotificationComponent(message, INFO_IMAGE)
-    } else {
-        error = new NotificationComponent(`Unknown notification level (\"${level}\") for message: ${message}`, ERROR_IMAGE)
-    }
+    const error = new NotificationComponent(message, level)
 
     notificationListComponent.append(error)
 
@@ -55,23 +47,30 @@ window.addEventListener("error", handleError)
 window.addEventListener("unhandledrejection", handleRejection)
 
 class NotificationComponent implements Component {
-    private messageElement: HTMLElement = document.createElement("p")
-    private imageElement: HTMLImageElement = document.createElement("img")
+    private card = document.createElement("div")
 
-    constructor(message: string, image: string) {
-        this.messageElement.innerText = message
-        this.messageElement.classList.add("notification-message")
-
-        this.imageElement.src = image
-        this.imageElement.classList.add("notification-image")
+    constructor(message: string, level: NotificationLevel) {
+        this.card.classList.add("gs-toast", `gs-toast--${level}`)
+        this.card.setAttribute("role", level === "error" ? "alert" : "status")
+        this.card.setAttribute("aria-atomic", "true")
+        const messageElement = document.createElement("p")
+        messageElement.textContent = message
+        messageElement.classList.add("notification-message")
+        const close = document.createElement("button")
+        close.type = "button"
+        close.classList.add("gs-icon-btn", "gs-toast__close")
+        close.setAttribute("aria-label", getTranslations(getCurrentLanguage()).stream.close)
+        close.appendChild(icon("x"))
+        close.addEventListener("click", () => notificationListComponent.removeValue(this))
+        this.card.addEventListener("keydown", event => {
+            if (event.key === "Escape") {
+                event.stopPropagation()
+                notificationListComponent.removeValue(this)
+            }
+        })
+        this.card.append(icon(level === "error" ? "circle-alert" : level === "warn" ? "triangle-alert" : "info", { size: 18 }), messageElement, close)
     }
 
-    mount(parent: Element): void {
-        parent.appendChild(this.imageElement)
-        parent.appendChild(this.messageElement)
-    }
-    unmount(parent: Element): void {
-        parent.removeChild(this.imageElement)
-        parent.removeChild(this.messageElement)
-    }
+    mount(parent: Element): void { parent.appendChild(this.card) }
+    unmount(parent: Element): void { parent.removeChild(this.card) }
 }

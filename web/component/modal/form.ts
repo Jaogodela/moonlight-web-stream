@@ -11,6 +11,10 @@ export abstract class FormModal<Output> implements Component, Modal<Output | nul
 
     constructor() {
         const i = getTranslations(getCurrentLanguage()).modal
+        this.submitButton.classList.add("gs-btn", "gs-btn--primary")
+        this.cancelButton.classList.add("gs-btn", "gs-btn--secondary")
+        this.cancelButton.type = "button"
+        this.cancelButton.dataset.modalCancel = "true"
         this.submitButton.type = "submit"
         this.submitButton.innerText = i.ok
 
@@ -29,6 +33,7 @@ export abstract class FormModal<Output> implements Component, Modal<Output | nul
             this.mountForm(this.formElement)
             this.formElement.appendChild(this.submitButton)
             this.formElement.appendChild(this.cancelButton)
+            this.mounted = true
         }
 
         this.reset()

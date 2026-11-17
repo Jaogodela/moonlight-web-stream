@@ -1,7 +1,7 @@
 import { ControllerConfig } from "../stream/gamepad"
 import { MouseMode, MouseScrollMode, TouchMode } from "../stream/input"
 import { PageStyle } from "../styles/index"
-import { getLanguageOptions, getTranslations, Language, normalizeLanguage } from "../i18n"
+import { getCurrentLanguage, getLanguageOptions, getTranslations, Language, normalizeLanguage } from "../i18n"
 import { Component, ComponentEvent } from "./index"
 import { InputComponent, SelectComponent } from "./input"
 import { SidebarEdge } from "./sidebar/index"
@@ -96,8 +96,8 @@ export function getLocalStreamSettings(defaultSettings: Settings) {
     }
 
     // Migration
-    if (settings?.pageStyle === "old") {
-        settings.pageStyle = "moonlight"
+    if (settings?.pageStyle === "old" || settings?.pageStyle === "standard") {
+        settings.pageStyle = "gaspar"
     }
 
     return settings
@@ -240,6 +240,7 @@ export class StreamSettingsComponent implements Component {
             numberSlider: {
                 range_min: Math.min(this.permissions.maximum_bitrate_kbps ?? 1000, 1000),
                 range_max: this.permissions.maximum_bitrate_kbps ?? 10000,
+                valueFormat: value => `${new Intl.NumberFormat(getCurrentLanguage(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value / 1000)} Mbps`,
             }
         })
         this.bitrate.addChangeListener(this.onSettingsChange.bind(this))
@@ -513,7 +514,7 @@ export class StreamSettingsComponent implements Component {
 
         // Page Style
         this.pageStyle = new SelectComponent("pageStyle", [
-            { value: "standard", name: "Standard" },
+            { value: "gaspar", name: "Gaspar" },
             { value: "moonlight", name: "Moonlight" },
         ], {
             displayName: i.style,

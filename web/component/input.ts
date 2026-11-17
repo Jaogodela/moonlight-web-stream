@@ -7,6 +7,7 @@ export class ElementWithLabel implements Component {
     protected label: HTMLLabelElement = document.createElement("label")
 
     constructor(internalName: string, displayName?: string) {
+        this.div.classList.add("gs-field")
         const i = getTranslations(getCurrentLanguage()).common
         if (displayName) {
             this.label.htmlFor = internalName
@@ -41,6 +42,7 @@ export type InputInit = {
     numberSlider?: {
         range_min: number,
         range_max: number
+        valueFormat?: (value: number) => string
         // Use step to set the step
     }
 }
@@ -51,6 +53,8 @@ export class InputComponent extends ElementWithLabel {
 
     private fileLabel: HTMLDivElement | null = null
     private numberSlider: HTMLInputElement | null = null
+    private rangeValue: HTMLOutputElement | null = null
+    private rangeValueFormat?: (value: number) => string
 
     private inputEnabled: HTMLInputElement | null = null
     private input: HTMLInputElement = document.createElement("input")
@@ -63,6 +67,13 @@ export class InputComponent extends ElementWithLabel {
 
         this.input.id = internalName
         this.input.type = type
+        // Role permission choices keep their classic checkboxes; settings use switches.
+        const isPermission = internalName === "allowAddHosts" || internalName === "allowHdr"
+            || internalName.startsWith("allowCodec") || internalName.startsWith("allowTransport")
+        if (type === "checkbox" && !isPermission) {
+            this.input.classList.add("gs-switch")
+            this.input.setAttribute("role", "switch")
+        }
         if (init?.defaultValue != null) {
             this.input.defaultValue = init.defaultValue
         }
@@ -102,6 +113,9 @@ export class InputComponent extends ElementWithLabel {
         if (init?.hasEnableCheckbox) {
             this.inputEnabled = document.createElement("input")
             this.inputEnabled.type = "checkbox"
+            this.inputEnabled.classList.add("gs-switch")
+            this.inputEnabled.setAttribute("role", "switch")
+            this.inputEnabled.setAttribute("aria-label", displayName ?? internalName)
             this.inputEnabled.defaultChecked = false
 
             this.inputEnabled.addEventListener("change", () => {
@@ -122,6 +136,7 @@ export class InputComponent extends ElementWithLabel {
                 this.numberSlider.value = this.input.value
             }
 
+            this.updateRangePresentation()
             this.div.dispatchEvent(new ComponentEvent("ml-change", this))
         })
 
@@ -135,6 +150,8 @@ export class InputComponent extends ElementWithLabel {
             this.numberSlider.max = `${init.numberSlider.range_max}`
             this.numberSlider.step = init.step?.toString() ?? ""
 
+            this.numberSlider.setAttribute("aria-label", displayName ?? internalName)
+            this.numberSlider.addEventListener("input", () => this.updateRangePresentation())
             this.numberSlider.addEventListener("change", () => {
                 if (this.numberSlider) {
                     this.input.value = this.numberSlider.value
@@ -142,10 +159,18 @@ export class InputComponent extends ElementWithLabel {
                     throw "failed to get value of number slider because it wasn't created"
                 }
 
+                this.updateRangePresentation()
                 this.div.dispatchEvent(new ComponentEvent("ml-change", this))
             })
 
             this.div.appendChild(this.numberSlider)
+            if (init.numberSlider.valueFormat) {
+                this.rangeValueFormat = init.numberSlider.valueFormat
+                this.rangeValue = document.createElement("output")
+                this.rangeValue.classList.add("gs-range-value")
+                this.rangeValue.htmlFor.value = internalName
+                this.div.appendChild(this.rangeValue)
+            }
         }
 
         if (init?.hasEnableCheckbox) {
@@ -154,10 +179,24 @@ export class InputComponent extends ElementWithLabel {
         }
     }
 
+    private updateRangePresentation() {
+        if (!this.numberSlider) return
+        if (this.rangeValue && this.rangeValueFormat) {
+            const text = this.rangeValueFormat(Number(this.numberSlider.value))
+            this.rangeValue.textContent = text
+            this.numberSlider.setAttribute("aria-valuetext", text)
+        }
+        const min = Number(this.numberSlider.min)
+        const max = Number(this.numberSlider.max)
+        const percent = max > min ? (Number(this.numberSlider.value) - min) / (max - min) * 100 : 0
+        this.numberSlider.style.setProperty("--gs-range-progress", `${Math.min(100, Math.max(0, percent))}%`)
+    }
+
     reset() {
         this.input.value = ""
         if (this.numberSlider) {
             this.numberSlider.value = ""
+            this.updateRangePresentation()
         }
     }
 
@@ -165,6 +204,7 @@ export class InputComponent extends ElementWithLabel {
         this.input.value = value
         if (this.numberSlider) {
             this.numberSlider.value = value
+            this.updateRangePresentation()
         }
     }
     getValue(): string {
@@ -212,6 +252,7 @@ export class InputComponent extends ElementWithLabel {
 
         if (this.numberSlider) {
             this.numberSlider.value = this.input.value
+            this.updateRangePresentation()
         }
     }
 }
@@ -258,6 +299,21 @@ export class SelectComponent extends ElementWithLabel {
 
             const display = document.createElement("p")
             display.classList.add("select-polyfill-display")
+            display.id = internalName
+            display.tabIndex = 0
+            display.setAttribute("role", "combobox")
+            display.setAttribute("aria-label", init?.displayName ?? internalName)
+            display.setAttribute("aria-haspopup", "listbox")
+            display.setAttribute("aria-expanded", "false")
+            display.setAttribute("aria-controls", `${internalName}-options`)
+            display.addEventListener("keydown", event => {
+                if (["Enter", " ", "ArrowDown", "ArrowUp"].includes(event.key)) {
+                    event.preventDefault()
+                    if (this.strategy.name !== "polyfill") return
+                    this.setStrategyPolyfillOpened(true)
+                    this.strategy.list.querySelector<HTMLElement>('[role="option"]:not([aria-disabled="true"])')?.focus()
+                }
+            })
 
             display.addEventListener("click", () => {
                 if (this.strategy.name != "polyfill") {
@@ -270,6 +326,22 @@ export class SelectComponent extends ElementWithLabel {
             const list = document.createElement("div")
 
             list.classList.add("select-polyfill-list")
+            list.id = `${internalName}-options`
+            list.setAttribute("role", "listbox")
+            list.setAttribute("aria-label", init?.displayName ?? internalName)
+            list.addEventListener("keydown", event => {
+                const options = Array.from(list.querySelectorAll<HTMLElement>('[role="option"]:not([aria-disabled="true"])'))
+                const index = options.indexOf(document.activeElement as HTMLElement)
+                if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+                    event.preventDefault()
+                    const next = event.key === "Home" ? 0 : event.key === "End" ? options.length - 1 : (index + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length
+                    options[next]?.focus()
+                } else if (event.key === "Escape" || event.key === "Tab") {
+                    if (event.key === "Escape") { event.preventDefault(); event.stopPropagation() }
+                    this.setStrategyPolyfillOpened(false)
+                    display.focus()
+                }
+            })
 
             wrapper.appendChild(display)
 
@@ -347,6 +419,11 @@ export class SelectComponent extends ElementWithLabel {
                 const optionElement = document.createElement("p")
 
                 optionElement.innerText = option.name
+                optionElement.tabIndex = -1
+                optionElement.setAttribute("role", "option")
+                optionElement.addEventListener("keydown", event => {
+                    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); optionElement.click() }
+                })
 
                 // @ts-ignore
                 optionElement.value = option.value
@@ -366,6 +443,7 @@ export class SelectComponent extends ElementWithLabel {
                     this.updateStrategyPolyfill()
 
                     this.dispatchChange()
+                    this.strategy.display.focus()
                 })
 
                 optionRoot.appendChild(optionElement)
@@ -434,10 +512,12 @@ export class SelectComponent extends ElementWithLabel {
                 if (enabled) {
                     this.strategy.disabled.delete(value)
 
+                    optionElement.setAttribute("aria-disabled", "false")
                     optionElement.classList.remove("select-polyfill-option-disabled")
                 } else {
                     this.strategy.disabled.add(value)
 
+                    optionElement.setAttribute("aria-disabled", "true")
                     optionElement.classList.add("select-polyfill-option-disabled")
                 }
             }
@@ -453,6 +533,7 @@ export class SelectComponent extends ElementWithLabel {
             // @ts-ignore
             const value = optionElement.value
 
+            optionElement.setAttribute("aria-selected", String(value == this.strategy.value))
             if (value == this.strategy.value) {
                 optionElement.classList.add("select-polyfill-selected")
             } else {
@@ -497,6 +578,7 @@ export class SelectComponent extends ElementWithLabel {
                 this.strategy.list.classList.remove("bottom")
             }
         }
+        this.strategy.display.setAttribute("aria-expanded", String(opened))
         this.strategy.opened = opened
     }
 
