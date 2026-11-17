@@ -1,0 +1,332 @@
+:root {
+  /* Rampa neutra "grafite" */
+  --gs-gray-0:   #FFFFFF;
+  --gs-gray-25:  #FBFBFA;
+  --gs-gray-50:  #F6F6F5;
+  --gs-gray-100: #EFEFEE;
+  --gs-gray-150: #E7E7E5;
+  --gs-gray-200: #DEDEDC;
+  --gs-gray-300: #CACAC7;
+  --gs-gray-400: #A6A6A2;
+  --gs-gray-500: #82827E;
+  --gs-gray-600: #63635F;
+  --gs-gray-700: #4A4A47;
+  --gs-gray-750: #3B3B39;
+  --gs-gray-800: #2E2E2C;
+  --gs-gray-850: #262625;
+  --gs-gray-900: #1F1F1E;
+  --gs-gray-925: #1B1B1A;
+  --gs-gray-950: #161615;
+  --gs-gray-975: #121211;
+
+  /* Brasa (acento) */
+  --gs-ember-100: #FFF1E7;
+  --gs-ember-200: #FFD9BF;
+  --gs-ember-300: #FFB27A;
+  --gs-ember-400: #FF9F5C;
+  --gs-ember-500: #FF8A3D;
+  --gs-ember-600: #F07428;
+  --gs-ember-700: #C2410C;
+  --gs-ember-800: #A8380A;
+  --gs-ember-900: #8F3009;
+
+  /* Estados */
+  --gs-green-400: #4CD388;  --gs-green-700: #15803D;
+  --gs-amber-400: #F5C04E;  --gs-amber-700: #A16207;
+  --gs-red-400:   #FF6B5E;  --gs-red-700:   #C62828;
+}
+
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Superfícies (camadas de cinza) */
+  --gs-bg:              var(--gs-gray-950);   /* #161615 página */
+  --gs-surface-1:       #1C1C1B;              /* cards, top bar, sidebar */
+  --gs-surface-2:       #242423;              /* menus, modais, popovers */
+  --gs-surface-3:       #2D2D2C;              /* hover sobre superfície, chips */
+  --gs-surface-sunken:  var(--gs-gray-975);   /* #121211 inputs, trilhos */
+  --gs-surface-inverse: var(--gs-gray-50);
+
+  /* Texto (contraste medido sobre --gs-bg) */
+  --gs-text:            #F2F2F0;              /* ~16:1 */
+  --gs-text-2:          #B5B5B0;              /* ~9:1 */
+  --gs-text-3:          #8C8C87;              /* ~5.3:1 (≥4.5 em surface-2) */
+  --gs-text-disabled:   #5F5F5B;              /* só para desabilitado (isento AA) */
+  --gs-text-inverse:    var(--gs-gray-950);
+
+  /* Bordas */
+  --gs-border:          #333331;
+  --gs-border-strong:   var(--gs-gray-700);
+  --gs-border-subtle:   #262625;
+
+  /* Acento */
+  --gs-accent:          var(--gs-ember-500);  /* botão primário */
+  --gs-accent-hover:    var(--gs-ember-400);
+  --gs-accent-active:   var(--gs-ember-600);
+  --gs-on-accent:       #1F1206;              /* texto em cima do acento (~7.9:1) */
+  --gs-accent-text:     var(--gs-ember-400);  /* links / texto acento (~9:1) */
+  --gs-accent-soft:     rgba(255, 138, 61, 0.14);
+  --gs-accent-soft-border: rgba(255, 138, 61, 0.32);
+
+  /* Estados de interação genéricos (overlay sobre qualquer superfície) */
+  --gs-state-hover:     rgba(255, 255, 255, 0.05);
+  --gs-state-pressed:   rgba(255, 255, 255, 0.09);
+  --gs-state-selected:  rgba(255, 255, 255, 0.07);
+  --gs-focus-ring:      var(--gs-ember-300);
+  --gs-focus-halo:      var(--gs-bg);
+
+  /* Semânticos */
+  --gs-success:         var(--gs-green-400);
+  --gs-success-soft:    rgba(76, 211, 136, 0.14);
+  --gs-warning:         var(--gs-amber-400);
+  --gs-warning-soft:    rgba(245, 192, 78, 0.14);
+  --gs-danger:          var(--gs-red-400);
+  --gs-danger-soft:     rgba(255, 107, 94, 0.14);
+  --gs-on-danger:       #2A0B08;
+  --gs-info:            var(--gs-text-2);     /* info é neutro, sem azul */
+
+  /* Overlays */
+  --gs-scrim:           rgba(14, 14, 13, 0.64);
+  --gs-glass:           rgba(28, 28, 27, 0.72);
+  --gs-glass-border:    rgba(255, 255, 255, 0.08);
+  --gs-cover-scrim:     linear-gradient(180deg, rgba(18,18,17,0) 45%, rgba(18,18,17,0.88) 100%);
+  --gs-skeleton-base:   #232322;
+  --gs-skeleton-shine:  #2E2E2D;
+
+  /* Stream */
+  --gs-stage-bg:        #121211;              /* letterbox/pillarbox: grafite, não preto */
+  --gs-hud-bg:          rgba(22, 22, 21, 0.74);
+  --gs-hud-border:      rgba(255, 255, 255, 0.10);
+  --gs-hud-text:        #F2F2F0;
+  --gs-hud-text-2:      #B5B5B0;
+  --gs-stat-good:       var(--gs-green-400);
+  --gs-stat-warn:       var(--gs-amber-400);
+  --gs-stat-bad:        var(--gs-red-400);
+
+  /* Sombras (escuro: sombra curta + realce interno de 1px) */
+  --gs-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.40);
+  --gs-shadow-2: 0 4px 12px rgba(0, 0, 0, 0.32), 0 1px 2px rgba(0, 0, 0, 0.30);
+  --gs-shadow-3: 0 12px 32px rgba(0, 0, 0, 0.44), 0 2px 6px rgba(0, 0, 0, 0.30);
+  --gs-shadow-4: 0 24px 64px rgba(0, 0, 0, 0.56), 0 4px 12px rgba(0, 0, 0, 0.32);
+  --gs-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --gs-bg:              var(--gs-gray-0);     /* #FFFFFF */
+  --gs-surface-1:       var(--gs-gray-25);    /* #FBFBFA cards */
+  --gs-surface-2:       var(--gs-gray-0);     /* menus/modais brancos + sombra */
+  --gs-surface-3:       var(--gs-gray-100);   /* #EFEFEE hover, chips */
+  --gs-surface-sunken:  var(--gs-gray-50);    /* #F6F6F5 inputs */
+  --gs-surface-inverse: var(--gs-gray-900);
+
+  --gs-text:            #191918;              /* ~17:1 sobre branco */
+  --gs-text-2:          #4F4F4C;              /* ~8.2:1 */
+  --gs-text-3:          #6B6B67;              /* ~5.3:1 */
+  --gs-text-disabled:   #A6A6A2;
+  --gs-text-inverse:    #F2F2F0;
+
+  --gs-border:          var(--gs-gray-150);   /* #E7E7E5 */
+  --gs-border-strong:   var(--gs-gray-300);
+  --gs-border-subtle:   var(--gs-gray-100);
+
+  --gs-accent:          var(--gs-ember-700);  /* #C2410C, branco em cima ~5.2:1 */
+  --gs-accent-hover:    var(--gs-ember-800);
+  --gs-accent-active:   var(--gs-ember-900);
+  --gs-on-accent:       #FFFFFF;
+  --gs-accent-text:     #B23C0B;              /* ~5.9:1 */
+  --gs-accent-soft:     var(--gs-ember-100);
+  --gs-accent-soft-border: var(--gs-ember-200);
+
+  --gs-state-hover:     rgba(25, 25, 24, 0.04);
+  --gs-state-pressed:   rgba(25, 25, 24, 0.08);
+  --gs-state-selected:  rgba(25, 25, 24, 0.06);
+  --gs-focus-ring:      var(--gs-ember-700);
+  --gs-focus-halo:      var(--gs-bg);
+
+  --gs-success:         var(--gs-green-700);
+  --gs-success-soft:    #E8F6EE;
+  --gs-warning:         var(--gs-amber-700);
+  --gs-warning-soft:    #FBF3DF;
+  --gs-danger:          var(--gs-red-700);
+  --gs-danger-soft:     #FCEBEA;
+  --gs-on-danger:       #FFFFFF;
+  --gs-info:            var(--gs-text-2);
+
+  --gs-scrim:           rgba(25, 25, 24, 0.36);
+  --gs-glass:           rgba(255, 255, 255, 0.78);
+  --gs-glass-border:    rgba(25, 25, 24, 0.08);
+  --gs-cover-scrim:     linear-gradient(180deg, rgba(18,18,17,0) 45%, rgba(18,18,17,0.80) 100%);
+  --gs-skeleton-base:   #EFEFEE;
+  --gs-skeleton-shine:  #F7F7F6;
+
+  --gs-stage-bg:        #E9E9E7;              /* barras cinza-claro no modo janela */
+  --gs-hud-bg:          rgba(255, 255, 255, 0.80);
+  --gs-hud-border:      rgba(25, 25, 24, 0.10);
+  --gs-hud-text:        #191918;
+  --gs-hud-text-2:      #4F4F4C;
+  --gs-stat-good:       var(--gs-green-700);
+  --gs-stat-warn:       var(--gs-amber-700);
+  --gs-stat-bad:        var(--gs-red-700);
+
+  --gs-shadow-1: 0 1px 2px rgba(25, 25, 24, 0.06);
+  --gs-shadow-2: 0 4px 12px rgba(25, 25, 24, 0.08), 0 1px 2px rgba(25, 25, 24, 0.06);
+  --gs-shadow-3: 0 12px 32px rgba(25, 25, 24, 0.12), 0 2px 6px rgba(25, 25, 24, 0.06);
+  --gs-shadow-4: 0 24px 64px rgba(25, 25, 24, 0.18), 0 4px 12px rgba(25, 25, 24, 0.08);
+  --gs-highlight: none;
+}
+
+/* Exceção justificada: em tela cheia o palco vira "cinema" nos dois temas
+   (grafite profundo, ainda não preto puro) para não emoldurar o jogo com cinza claro. */
+:root:fullscreen, body:fullscreen, :fullscreen {
+  --gs-stage-bg: #0F0F0E;
+}
+
+
+:root {
+  --gs-font-display: "Bricolage Grotesque", "Geist", ui-sans-serif, system-ui, sans-serif;
+  --gs-font-text:    "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+                     "Noto Sans", "PingFang SC", "Noto Sans KR", sans-serif;
+  --gs-font-mono:    "Geist Mono", ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, monospace;
+
+  /* Escala (base 16px; ratio ~1.2 até lg, ~1.25 acima) — tamanho / altura de linha */
+  --gs-text-2xs: 0.6875rem; --gs-leading-2xs: 1rem;      /* 11px  overline, badges */
+  --gs-text-xs:  0.75rem;   --gs-leading-xs:  1rem;      /* 12px  stats, legendas */
+  --gs-text-sm:  0.875rem;  --gs-leading-sm:  1.25rem;   /* 14px  UI secundária */
+  --gs-text-md:  1rem;      --gs-leading-md:  1.5rem;    /* 16px  corpo, inputs */
+  --gs-text-lg:  1.125rem;  --gs-leading-lg:  1.625rem;  /* 18px  lead */
+  --gs-text-xl:  1.375rem;  --gs-leading-xl:  1.75rem;   /* 22px  h3 */
+  --gs-text-2xl: 1.75rem;   --gs-leading-2xl: 2.125rem;  /* 28px  h2 */
+  --gs-text-3xl: 2.25rem;   --gs-leading-3xl: 2.5rem;    /* 36px  h1 página */
+  --gs-text-4xl: clamp(2.5rem, 2rem + 2.5vw, 3.75rem); --gs-leading-4xl: 1.05; /* hero */
+
+  --gs-weight-regular: 400;
+  --gs-weight-medium:  500;
+  --gs-weight-semibold: 600;
+  --gs-weight-bold:    700;
+  --gs-weight-display: 680;   /* Bricolage variável */
+
+  --gs-tracking-tight:  -0.025em; /* display ≥ 2xl */
+  --gs-tracking-snug:   -0.012em; /* xl, títulos de card */
+  --gs-tracking-normal: 0;
+  --gs-tracking-wide:   0.06em;   /* overline/labels em caixa alta */
+}
+
+
+:root {
+  --gs-space-0:   0;
+  --gs-space-0_5: 2px;
+  --gs-space-1:   4px;
+  --gs-space-1_5: 6px;
+  --gs-space-2:   8px;
+  --gs-space-3:   12px;
+  --gs-space-4:   16px;
+  --gs-space-5:   20px;
+  --gs-space-6:   24px;
+  --gs-space-8:   32px;
+  --gs-space-10:  40px;
+  --gs-space-12:  48px;
+  --gs-space-16:  64px;
+  --gs-space-20:  80px;
+
+  --gs-container-max: 1440px;
+  --gs-gutter: 16px;                 /* ≥768: 24px · ≥1280: 32px (via media query) */
+  --gs-topbar-h: 64px;               /* <768: 56px */
+  --gs-bottomnav-h: 64px;            /* só <768 */
+  --gs-touch-min: 44px;
+  --gs-control-h-sm: 32px;
+  --gs-control-h-md: 40px;
+  --gs-control-h-lg: 48px;
+
+  --gs-cover-ratio: 3 / 4;           /* capas 600×800 (README) */
+  --gs-cover-min: 140px;             /* ≥768: 168px · ≥1280: 196px · ≥1600: 220px */
+  --gs-grid-gap: 16px;               /* ≥1024: 24px */
+
+  --gs-safe-top:    env(safe-area-inset-top, 0px);
+  --gs-safe-right:  env(safe-area-inset-right, 0px);
+  --gs-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --gs-safe-left:   env(safe-area-inset-left, 0px);
+}
+/* Breakpoints (literais): sm 480px · md 768px · lg 1024px · xl 1280px · 2xl 1600px */
+
+
+:root {
+  --gs-radius-xs: 4px;    /* badges pequenos, teclas */
+  --gs-radius-sm: 6px;    /* chips, inputs compactos */
+  --gs-radius-md: 10px;   /* botões, inputs */
+  --gs-radius-lg: 14px;   /* cards, capas */
+  --gs-radius-xl: 20px;   /* modais, dock do stream */
+  --gs-radius-2xl: 28px;  /* sheets mobile (cantos superiores) */
+  --gs-radius-pill: 999px;
+
+  --gs-border-w: 1px;
+  --gs-focus-w: 2px;
+  --gs-focus-offset: 2px;
+
+  --gs-blur-sm: 8px;
+  --gs-blur-md: 16px;     /* HUD/dock */
+  --gs-blur-lg: 24px;     /* scrim de modal */
+}
+
+
+:root {
+  --gs-z-base: 0;
+  --gs-z-raised: 10;
+  --gs-z-stream-stage: 0;
+  --gs-z-stream-cursor: 20;
+  --gs-z-topbar: 100;
+  --gs-z-bottomnav: 100;
+  --gs-z-dock: 200;          /* sidebar do stream */
+  --gs-z-hud: 300;           /* stats */
+  --gs-z-keyboard: 400;      /* teclado nativo/simulado */
+  --gs-z-popover: 500;       /* context menu, dropdown polyfill */
+  --gs-z-toast: 600;
+  --gs-z-modal: 700;
+  --gs-z-tooltip: 800;
+  --gs-z-skiplink: 900;
+}
+
+
+:root {
+  --gs-dur-instant: 80ms;   /* pressed, cor de ícone */
+  --gs-dur-fast:    140ms;  /* hover, foco */
+  --gs-dur-base:    200ms;  /* menus, toasts, switch */
+  --gs-dur-slow:    320ms;  /* modal, dock, sheet */
+  --gs-dur-page:    420ms;  /* entrada de lista (stagger máx 6 itens × 30ms) */
+
+  --gs-ease-out:    cubic-bezier(0.2, 0.8, 0.2, 1);
+  --gs-ease-in:     cubic-bezier(0.4, 0, 1, 1);
+  --gs-ease-in-out: cubic-bezier(0.6, 0, 0.2, 1);
+  --gs-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* só toggles/switch */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --gs-dur-instant: 0.01ms; --gs-dur-fast: 0.01ms; --gs-dur-base: 0.01ms;
+    --gs-dur-slow: 0.01ms;    --gs-dur-page: 0.01ms;
+  }
+  .gs-skeleton { animation: none !important; }
+  * { scroll-behavior: auto !important; }
+}
+
+
+/* Responsive token values documented in section 4.5. */
+@media (max-width: 767px) {
+  :root { --gs-topbar-h: 56px; }
+}
+@media (min-width: 768px) {
+  :root { --gs-gutter: 24px; --gs-cover-min: 168px; }
+}
+@media (min-width: 1024px) {
+  :root { --gs-grid-gap: 24px; }
+}
+@media (min-width: 1280px) {
+  :root { --gs-gutter: 32px; --gs-cover-min: 196px; }
+}
+@media (min-width: 1600px) {
+  :root { --gs-cover-min: 220px; }
+}

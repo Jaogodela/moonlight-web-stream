@@ -1,3 +1,5 @@
+import tokens from "./tokens.css";
+import "./theme";
 import { globalDefaultSettings, getLocalStreamSettings } from "../component/settings_menu"
 
 // old doesn't exist anymore and is always replaced with moonlight when loading the settings
@@ -26,6 +28,8 @@ export function setStyle(style: PageStyle) {
 export function getStyle(): PageStyle {
     return currentStyle as PageStyle
 }
+
+tokens.use()
 
 const settings = getLocalStreamSettings(globalDefaultSettings())
 

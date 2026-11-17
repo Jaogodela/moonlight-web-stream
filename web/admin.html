@@ -3,6 +3,20 @@
 
 <head>
     <meta charset="UTF-8" />
+<script>
+  (function () {
+    try {
+      var p = localStorage.getItem("gaspar.theme") || "system";
+      var dark = p === "dark" || (p === "system" && !window.matchMedia("(prefers-color-scheme: light)").matches);
+      document.documentElement.dataset.theme = dark ? "dark" : "light";
+      document.documentElement.dataset.themePref = p;
+    } catch (e) { document.documentElement.dataset.theme = "dark"; }
+  })();
+</script>
+
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#161615" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
     <meta name="google" content="notranslate" />
     <title>Moonlight</title>
     <link rel="icon" href="resources/moonlight.svg" sizes="any" type="image/svg+xml">
