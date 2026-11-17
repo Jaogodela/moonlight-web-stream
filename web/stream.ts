@@ -187,6 +187,7 @@ class ViewerApp implements Component {
 
     constructor(api: Api, hostId: number, appId: number, bootstrapRole: DetailedRole, options?: Partial<Settings>) {
         this.api = api
+        this.div.classList.add("stream-stage")
 
         const defaultSettings = getLocalStreamSettings(bootstrapRole.default_settings)
         const settings = {
@@ -798,6 +799,7 @@ class ViewerApp implements Component {
 
     // -- On Screen Keyboard + Local Touch Viewport
     private streamVideoTopOffsetPx = -100000
+    private streamVideoHeightPx = -100000
     private keyboardHeight = 0
 
     onScreenKeyboardModeChange(event: KeyboardModeChangeEvent) {
@@ -820,11 +822,14 @@ class ViewerApp implements Component {
         const cursor = this.stream.getInput().getLocalCursorState()
 
         let offset = this.getVideoCenterOffset(visibleTop, visibleBottom)
+        let height = visibleBottom - visibleTop
         if (cursor.visible) {
+            // Local cursor mode keeps the full height and pans to keep the cursor visible.
+            height = viewport.height
             offset = this.getVideoOffsetWithCursor(cursor.y, streamRect.height, offset, visibleTop, visibleBottom)
         }
 
-        this.setVideoPositionAndSize(offset, viewport.height)
+        this.setVideoPositionAndSize(offset, height)
     }
 
     private getVideoCenterOffset(visibleTop: number, visibleBottom: number): number {
@@ -863,11 +868,12 @@ class ViewerApp implements Component {
     }
 
     private setVideoPositionAndSize(offset: number, height: number) {
-        if (Math.abs(offset - this.streamVideoTopOffsetPx) < 1) {
+        if (Math.abs(offset - this.streamVideoTopOffsetPx) < 1 && Math.abs(height - this.streamVideoHeightPx) < 1) {
             return
         }
 
         this.streamVideoTopOffsetPx = offset
+        this.streamVideoHeightPx = height
 
         document.documentElement.style.setProperty(
             "--stream-video-middle",
