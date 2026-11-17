@@ -240,41 +240,30 @@ body.stream {
 
 .gs-stream-menu__group--display .gs-stream-menu__scale {
   grid-column: 1 / -1;
-}
-
-.gs-stream-menu__scale {
-  display: flex;
   min-width: 0;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 2px;
-  padding: 11px;
-  border: 1px solid var(--gs-border-subtle);
-  border-radius: 12px;
-  background: var(--gs-surface-sunken);
 }
 
-.gs-stream-menu__scale-heading {
-  display: flex;
+.gs-stream-menu__scale > .gs-field {
+  display: grid;
+  grid-template-columns: minmax(62px, max-content) minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
+  margin: 2px 0 0;
+}
+
+.gs-stream-menu__scale > .gs-field > label {
   color: var(--gs-text-2);
   font-size: 12px;
   font-weight: 600;
 }
 
-.gs-stream-menu__scale-value {
-  color: var(--gs-text);
+.gs-stream-menu__scale select,
+.gs-stream-menu__scale .select-polyfill-display {
+  min-height: 40px;
+  padding-block: 8px;
   font-family: var(--gs-font-mono);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-}
-
-.gs-stream-menu__scale-options {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 4px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -283,66 +272,6 @@ body.stream {
     transition: none;
     animation: none;
   }
-}
-
-.gs-stream-menu__scale-button {
-  min-width: 0;
-  min-height: 40px;
-  padding: 0 2px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: var(--gs-surface-2);
-  color: var(--gs-text-2);
-  box-shadow: none;
-  font-family: var(--gs-font-mono);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.gs-stream-menu__scale-button:hover:not(:disabled) {
-  transform: none;
-  background: var(--gs-surface-3);
-  box-shadow: none;
-}
-
-.gs-stream-menu__scale-button.is-selected,
-.gs-stream-menu__scale-button[aria-pressed="true"] {
-  border-color: var(--gs-accent-soft-border);
-  background: var(--gs-accent-soft);
-  color: var(--gs-accent-text);
-}
-
-.gs-stream-menu__fit-button {
-  min-height: 40px;
-  justify-content: center;
-  gap: 8px;
-  border: 1px solid var(--gs-border);
-  border-radius: 9px;
-  background: var(--gs-surface-2);
-  color: var(--gs-text-2);
-  box-shadow: none;
-  font-size: 12px;
-}
-
-.gs-stream-menu__fit-button .gs-stream-menu__icon {
-  width: 16px;
-  height: 16px;
-  flex-basis: 16px;
-}
-
-.gs-stream-menu__fit-button.is-selected,
-.gs-stream-menu__fit-button[aria-pressed="true"] {
-  border-color: var(--gs-border-strong);
-  background: var(--gs-surface-3);
-  color: var(--gs-text);
-}
-
-.gs-stream-menu__fit-button:hover:not(:disabled),
-.gs-stream-menu__scale-button:active:not(:disabled),
-.gs-stream-menu__fit-button:active:not(:disabled) {
-  transform: none;
-  box-shadow: none;
 }
 
 .gs-stream-menu__actions > .gs-field,

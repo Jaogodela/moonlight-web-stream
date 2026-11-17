@@ -167,38 +167,32 @@ type StreamMenuCopy = {
     scale: string
     fit: string
     toggleMenu: string
-    scaleLabel: (percent: number) => string
 }
 
 const streamMenuCopy: Record<Language, StreamMenuCopy> = {
     en: {
         controls: "Stream controls", input: "Input", display: "Display", session: "Session",
         key: "Key", lock: "Lock", scale: "Scale", fit: "Fit", toggleMenu: "Toggle stream controls",
-        scaleLabel: percent => `Video scale ${percent}%`,
     },
     "pt-BR": {
         controls: "Controles do jogo", input: "Entrada", display: "Tela", session: "Sessão",
         key: "Tecla", lock: "Travar", scale: "Escala", fit: "Ajustar", toggleMenu: "Abrir ou fechar controles do jogo",
-        scaleLabel: percent => `Escala do vídeo ${percent}%`,
     },
     "fr-FR": {
         controls: "Commandes du jeu", input: "Entrée", display: "Affichage", session: "Session",
         key: "Touche", lock: "Verrou", scale: "Échelle", fit: "Ajuster", toggleMenu: "Afficher ou masquer les commandes",
-        scaleLabel: percent => `Échelle vidéo ${percent}%`,
     },
     "zh-CN": {
         controls: "串流控制", input: "输入", display: "显示", session: "会话",
         key: "按键", lock: "锁定", scale: "缩放", fit: "适配", toggleMenu: "显示或隐藏串流控制",
-        scaleLabel: percent => `视频缩放 ${percent}%`,
     },
     "ko-KR": {
         controls: "스트림 컨트롤", input: "입력", display: "화면", session: "세션",
         key: "키", lock: "잠금", scale: "크기", fit: "맞춤", toggleMenu: "스트림 컨트롤 표시 또는 숨기기",
-        scaleLabel: percent => `비디오 크기 ${percent}%`,
     },
 }
 
-type StreamMenuIcon = "key" | "lock" | "keyboard" | "fullscreen" | "stats" | "exit" | "fit"
+type StreamMenuIcon = "key" | "lock" | "keyboard" | "fullscreen" | "stats" | "exit"
 
 const streamMenuIconMarkup: Record<StreamMenuIcon, string> = {
     key: '<path d="M4 5h16v14H4z"/><path d="M7 9h2m2 0h2m2 0h2M7 12h2m2 0h2m2 0h2M8 15h8"/>',
@@ -207,7 +201,6 @@ const streamMenuIconMarkup: Record<StreamMenuIcon, string> = {
     fullscreen: '<path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/>',
     stats: '<path d="M4 19V5m0 14h17"/><path d="m7 15 4-4 3 2 5-6"/>',
     exit: '<path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/>',
-    fit: '<path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/>',
 }
 
 function createStreamMenuIcon(name: StreamMenuIcon): SVGSVGElement {
@@ -406,9 +399,9 @@ class ViewerApp implements Component {
     }
 
     private async startStream(settings: Settings) {
-        // Display scaling belongs to this ViewerApp instance and always starts fitted.
+        // Display scaling belongs to this ViewerApp instance and always starts at 100%.
         this.setDisplayScale(1)
-        this.sidebar.onScaleChange(1, true)
+        this.sidebar.resetDisplayScale()
 
         setSidebarStyle({
             edge: settings.sidebarEdge,
@@ -540,7 +533,7 @@ class ViewerApp implements Component {
     }
 
     setDisplayScale(scale: number) {
-        const boundedScale = Math.min(2, Math.max(1, scale))
+        const boundedScale = Math.min(2, Math.max(0.5, scale))
         this.div.style.setProperty("--stream-scale", `${boundedScale}`)
     }
 
@@ -1135,11 +1128,9 @@ class ViewerSidebar implements Component, Sidebar, ScreenKeyboardListener {
 
     private div = document.createElement("div")
 
-    private scaleOptions: HTMLButtonElement[] = []
-    private scaleOutput = document.createElement("output")
-    private fitScaleButton = document.createElement("button")
     private statsButton = document.createElement("button")
 
+    private scaleSelect: SelectComponent
     private mouseMode: SelectComponent
     private touchMode: SelectComponent
     private menuCopy: StreamMenuCopy
@@ -1216,51 +1207,24 @@ class ViewerSidebar implements Component, Sidebar, ScreenKeyboardListener {
         this.statsButton.dataset.statsMode = "off"
         displayActions.appendChild(this.statsButton)
 
-        // Scale changes only the rendered stage size; it is reset for every stream.
+        // Scale is session-only and resets to 100% for every stream.
         const scaleControl = document.createElement("div")
         scaleControl.classList.add("gs-stream-menu__scale")
-        const scaleLabel = document.createElement("div")
-        scaleLabel.classList.add("gs-stream-menu__scale-heading")
-        scaleLabel.textContent = this.menuCopy.scale
-        this.scaleOutput.classList.add("gs-stream-menu__scale-value")
-        this.scaleOutput.textContent = "100%"
-        scaleLabel.appendChild(this.scaleOutput)
-        scaleControl.appendChild(scaleLabel)
-
-        const scaleOptions = document.createElement("div")
-        scaleOptions.classList.add("gs-stream-menu__scale-options")
-        scaleOptions.setAttribute("role", "group")
-        scaleOptions.setAttribute("aria-label", this.menuCopy.scale)
-        for (const percent of [100, 125, 150, 175, 200]) {
-            const option = document.createElement("button")
-            option.type = "button"
-            option.classList.add("gs-stream-menu__scale-button")
-            option.textContent = `${percent}%`
-            option.setAttribute("aria-label", this.menuCopy.scaleLabel(percent))
-            option.setAttribute("aria-pressed", "false")
-            option.addEventListener("click", () => {
-                this.app.setDisplayScale(percent / 100)
-                this.onScaleChange(percent / 100, false)
-            })
-            this.scaleOptions.push(option)
-            scaleOptions.appendChild(option)
-        }
-        scaleControl.appendChild(scaleOptions)
-
-        this.fitScaleButton.type = "button"
-        this.fitScaleButton.classList.add("gs-stream-menu__fit-button")
-        this.fitScaleButton.setAttribute("aria-pressed", "false")
-        this.fitScaleButton.setAttribute("aria-label", this.menuCopy.fit)
-        this.fitScaleButton.title = this.menuCopy.fit
-        this.fitScaleButton.appendChild(createStreamMenuIcon("fit"))
-        const fitLabel = document.createElement("span")
-        fitLabel.textContent = this.menuCopy.fit
-        this.fitScaleButton.appendChild(fitLabel)
-        this.fitScaleButton.addEventListener("click", () => {
-            this.app.setDisplayScale(1)
-            this.onScaleChange(1, true)
+        this.scaleSelect = new SelectComponent("displayScale", [
+            { value: "0.5", name: "50%" },
+            { value: "0.75", name: "75%" },
+            { value: "1", name: "100%" },
+            { value: "1.25", name: "125%" },
+            { value: "1.5", name: "150%" },
+            { value: "1.75", name: "175%" },
+            { value: "2", name: "200%" },
+            { value: "fit", name: this.menuCopy.fit },
+        ], {
+            displayName: this.menuCopy.scale,
+            preSelectedOption: "1",
         })
-        scaleControl.appendChild(this.fitScaleButton)
+        this.scaleSelect.addChangeListener(this.onDisplayScaleChange.bind(this))
+        this.scaleSelect.mount(scaleControl)
         displayActions.appendChild(scaleControl)
 
         // Close stream
@@ -1354,16 +1318,26 @@ class ViewerSidebar implements Component, Sidebar, ScreenKeyboardListener {
         button.appendChild(text)
     }
 
-    onScaleChange(scale: number, fit: boolean): void {
-        const percent = Math.round(scale * 100)
-        this.scaleOutput.textContent = `${percent}%`
-        for (const option of this.scaleOptions) {
-            const selected = Number.parseInt(option.textContent ?? "", 10) === percent && !fit
-            option.setAttribute("aria-pressed", selected ? "true" : "false")
-            option.classList.toggle("is-selected", selected)
+    resetDisplayScale(): void {
+        this.scaleSelect.reset()
+    }
+
+    private onDisplayScaleChange(): void {
+        const selectedScale = this.scaleSelect.getValue()
+        if (selectedScale == null) {
+            return
         }
-        this.fitScaleButton.setAttribute("aria-pressed", fit ? "true" : "false")
-        this.fitScaleButton.classList.toggle("is-selected", fit)
+
+        if (selectedScale === "fit") {
+            // The stage uses object-fit: contain, so 100% fits the video without cropping.
+            this.app.setDisplayScale(1)
+            return
+        }
+
+        const scale = Number(selectedScale)
+        if (Number.isFinite(scale)) {
+            this.app.setDisplayScale(scale)
+        }
     }
 
     onCapabilitiesChange(capabilities: StreamCapabilities) {
