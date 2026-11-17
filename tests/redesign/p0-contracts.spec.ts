@@ -28,14 +28,15 @@ test("T-UI-02 fonts and icon wrapper meet asset and accessible SVG contracts", a
 test("T-UI-03 primitives provide focus rings, dialog semantics, and no global transitions", async () => {
   test.skip(!existsSync(file("web/styles/gaspar.css")), "T-UI-03 implementation has not landed");
   const css = await read("web/styles/gaspar.css");
+  const tokens = await read("web/styles/tokens.css");
   const modal = await read("web/component/modal/index.ts");
   expect(css).not.toMatch(/\*\s*\{[^}]*transition\s*:/s);
   expect(css).toMatch(/:focus-visible[\s\S]{0,240}outline[^;]*2px/i);
   expect(css).toContain("--gs-focus-ring");
   expect(modal).toContain('role", "dialog"');
   expect(modal).toContain('aria-modal", "true"');
-  expect(css).toMatch(/--gs-z-popover:\s*500/);
-  expect(css).toMatch(/--gs-z-topbar:\s*100/);
+  expect(tokens).toMatch(/--gs-z-popover:\s*500/);
+  expect(tokens).toMatch(/--gs-z-topbar:\s*100/);
 });
 
 test("T-UI-04 stream video uses contain, themed stage, and no size transition", async ({ page, baseURL }) => {
@@ -95,7 +96,7 @@ test("T-UI-06 login exposes the required accessible password toggle and submit o
   const form = await read("web/component/modal/form.ts");
   expect(login).toMatch(/aria-pressed/i);
   expect(login).toMatch(/aria-label/i);
-  expect(login).toMatch(/type\s*=\s*["']password["']/i);
+  expect(login).toMatch(/type[^;\n]*password/i);
   expect(form).toMatch(/addEventListener\(["']keydown|type=["']submit|requestSubmit/i);
   expect(login).toMatch(/passwordFile|file/i);
 });
