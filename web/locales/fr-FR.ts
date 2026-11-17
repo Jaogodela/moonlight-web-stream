@@ -161,7 +161,7 @@ export const frFr: Translations = {
         allowHdr: "Permettre HDR",
         allowWebrtc: "Permettre WebRTC",
         allowWebSockets: "Permettre Web Sockets",
-        roleDeleteBlocked: (users: string[]) => `Pour supprimer ce rôle, tous les utilisateurs associés à ce rôle doivent être supprimés ou associés à un autre rôle.\nUtilisateurs actuellement associés à ce rôle:\n${JSON.stringify(users)}`,
+        roleDeleteBlocked: (users: string[]) => `Pour supprimer ce rôle, tous les utilisateurs associés à ce rôle doivent être supprimés ou associés à un autre rôle.\nUtilisateurs actuellement associés à ce rôle:\n${users.join(", ")}`,
         setDefault: "Définir par défaut",
         removeAsDefault: "Retirer comme valeur par défaut",
         setDefaultUserDialog: "Définir cet utilisateur comme utilisateur par défaut ?"

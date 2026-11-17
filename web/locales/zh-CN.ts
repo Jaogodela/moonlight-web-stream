@@ -161,7 +161,7 @@ export const zhCN: Translations = {
         allowHdr: "允许 HDR",
         allowWebrtc: "允许 WebRTC",
         allowWebSockets: "允许 WebSocket",
-        roleDeleteBlocked: (users: string[]) => `要删除这个角色，需先删除或重新分配仍在使用该角色的用户。\n当前用户：\n${JSON.stringify(users)}`,
+        roleDeleteBlocked: (users: string[]) => `要删除这个角色，需先删除或重新分配仍在使用该角色的用户。\n当前用户：\n${users.join(", ")}`,
         setDefault: "设为默认",
         removeAsDefault: "取消默认",
         setDefaultUserDialog: "要将此用户设为默认用户吗？"

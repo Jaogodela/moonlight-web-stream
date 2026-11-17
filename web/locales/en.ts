@@ -162,7 +162,7 @@ export const en = {
         allowHdr: "Allow HDR",
         allowWebrtc: "Allow WebRTC",
         allowWebSockets: "Allow Web Sockets",
-        roleDeleteBlocked: (users: string[]) => `To remove this role all users that are currently assigned this role either need to be deleted or assigned another role.\nCurrently these users still have the role:\n${JSON.stringify(users)}`,
+        roleDeleteBlocked: (users: string[]) => `To remove this role all users that are currently assigned this role either need to be deleted or assigned another role.\nCurrently these users still have the role:\n${users.join(", ")}`,
     },
     host: {
         showDetails: "Show Details",
