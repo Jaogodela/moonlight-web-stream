@@ -49,9 +49,11 @@ export class HostList extends FetchListComponent<DetailedHost | UndetailedHost, 
 
         newHost.addHostRemoveListener(this.removeHostListener.bind(this))
         newHost.addHostOpenListener(this.onHostOpenEvent.bind(this))
+        this.eventTarget.dispatchEvent(new Event("hostschange"))
     }
     public removeList(listIndex: number): void {
         const hostComponent = this.list.remove(listIndex)
+        this.eventTarget.dispatchEvent(new Event("hostschange"))
 
         hostComponent?.addHostOpenListener(this.onHostOpenEvent.bind(this))
         hostComponent?.removeHostRemoveListener(this.removeHostListener.bind(this))
@@ -61,6 +63,14 @@ export class HostList extends FetchListComponent<DetailedHost | UndetailedHost, 
         const listIndex = this.list.get().findIndex(component => component.getHostId() == event.component.getHostId())
 
         this.removeList(listIndex)
+    }
+
+    addHostsChangedListener(listener: () => void) {
+        this.eventTarget.addEventListener("hostschange", listener)
+    }
+
+    getHosts(): readonly Host[] {
+        return this.list.get()
     }
 
     getHost(hostId: number): Host | undefined {

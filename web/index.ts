@@ -1,3 +1,4 @@
+import { Chrome, labelButton, themeButton } from "./component/chrome"
 import "./polyfill/index"
 import { Api, getApi, apiPostHost, FetchError, apiLogout, apiGetUser, tryLogin, apiGetHost, apiGetRole, apiPatchRole } from "./api"
 import { AddHostModal } from "./component/host/add_modal"
@@ -82,9 +83,19 @@ class MainApp implements Component {
     private divElement = document.createElement("div")
 
     // Top Line
-    private topLine = document.createElement("div")
+    private chrome = new Chrome()
+    private topLine = this.chrome.header
+    private pageHeader = document.createElement("header")
+    private pageTitle = document.createElement("h1")
+    private main = document.createElement("main")
+    private libraryNav = document.createElement("button")
+    private serversNav = document.createElement("button")
+    private mobileLibrary = document.createElement("button")
+    private mobileServers = document.createElement("button")
+    private mobileSettings = document.createElement("button")
+    private lastHostId: number | null = null
+    private appearance = document.createElement("div")
 
-    private moonlightTextElement = document.createElement("h1")
 
     private topLineActions = document.createElement("div")
     private logoutButton = document.createElement("button")
@@ -114,20 +125,45 @@ class MainApp implements Component {
         this.api = api
         this.role = bootstrapRole
 
-        // Top Line
-        this.topLine.classList.add("top-line")
-
-        this.moonlightTextElement.innerHTML = I.index.appTitle
-        this.topLine.appendChild(this.moonlightTextElement)
-
-        this.topLine.appendChild(this.topLineActions)
-        this.topLineActions.classList.add("top-line-actions")
-
+        this.topLineActions = this.chrome.accountItems
+        const C = I.chrome
+        labelButton(this.loginButton, "log-in", C.login)
+        labelButton(this.logoutButton, "log-out", C.logout)
+        labelButton(this.adminButton, "shield-check", C.admin)
+        labelButton(this.backButton, "arrow-left", I.index.back)
+        labelButton(this.hostAddButton, "plus", C.addHost)
+        labelButton(this.settingsButton, "settings-2", C.settings, false)
+        labelButton(this.saveRoleDefaultsButton, "save", I.settings.saveRoleDefaults)
+        this.chrome.actions.insertBefore(this.settingsButton, this.chrome.actions.children[2])
+        this.settingsButton.className = "gs-desktop-settings gs-icon-btn"
+        this.libraryNav.textContent = C.library
+        this.serversNav.textContent = C.servers
+        labelButton(this.mobileLibrary, "gamepad-2", C.play)
+        labelButton(this.mobileServers, "monitor", C.servers)
+        labelButton(this.mobileSettings, "settings-2", C.settings)
+        const openLibrary = () => {
+            const id = this.lastHostId != null && this.hostList.getHost(this.lastHostId)
+                ? this.lastHostId : this.hostList.getHosts()[0]?.getHostId()
+            if (id != null) this.setCurrentDisplay("games", { hostId: id })
+            else this.setCurrentDisplay("hosts")
+        }
+        for (const button of [this.libraryNav, this.mobileLibrary]) button.addEventListener("click", openLibrary)
+        for (const button of [this.serversNav, this.mobileServers]) button.addEventListener("click", () => this.setCurrentDisplay("hosts"))
+        this.mobileSettings.addEventListener("click", () => this.setCurrentDisplay("settings"))
+        this.chrome.primary.append(this.libraryNav, this.serversNav)
+        this.chrome.bottom.append(this.mobileLibrary, this.mobileServers, this.mobileSettings)
+        this.chrome.selector.addEventListener("change", () => this.setCurrentDisplay("games", { hostId: Number(this.chrome.selector.value) }))
+        this.pageHeader.className = "gs-page-header"
+        this.main.id = "main-content"
+        this.main.tabIndex = -1
+        this.main.className = "gs-main"
+        this.pageHeader.append(this.pageTitle, this.actionElement)
+        this.main.append(this.pageHeader)
         this.logoutButton.addEventListener("click", async () => {
             await apiLogout(this.api)
             window.location.reload()
         })
-        this.logoutButton.classList.add("logout-button")
+
 
         this.loginButton.addEventListener("click", async () => {
             const success = await tryLogin()
@@ -135,35 +171,38 @@ class MainApp implements Component {
                 window.location.reload()
             }
         })
-        this.loginButton.classList.add("login-button")
+
 
         this.adminButton.addEventListener("click", async () => {
             window.location.href = buildUrl("/admin.html")
         })
-        this.adminButton.classList.add("admin-button")
+
 
         // Actions
-        this.actionElement.classList.add("actions-list")
+        this.actionElement.classList.add("gs-page-header__actions")
 
         // Back button
-        this.backButton.innerText = I.index.back
+
         this.backButton.classList.add("button-fit-content")
         this.backButton.addEventListener("click", backAppState)
         this.backButton.dataset.variant = "back-button"
 
         // Host add button
-        this.hostAddButton.classList.add("host-add")
+
         this.hostAddButton.addEventListener("click", this.addHost.bind(this))
 
         // Host list
         this.hostList = new HostList(api)
+        this.hostList.addHostsChangedListener(() => this.syncNavigation())
+        this.appearance.className = "gs-theme-row"
+        this.appearance.append(document.createTextNode(I.chrome.theme), themeButton())
         this.hostList.addHostOpenListener(this.onHostOpen.bind(this))
 
         // Settings Button
-        this.settingsButton.classList.add("open-settings")
+
         this.settingsButton.addEventListener("click", () => this.setCurrentDisplay("settings"))
 
-        this.saveRoleDefaultsButton.innerText = I.settings.saveRoleDefaults
+
         this.saveRoleDefaultsButton.classList.add("button-fit-content")
         this.saveRoleDefaultsButton.addEventListener("click", this.onSaveRoleDefaults.bind(this))
         this.saveRoleDefaultsButton.dataset.variant = "save-button"
@@ -177,7 +216,7 @@ class MainApp implements Component {
 
         // Append default elements
         this.divElement.appendChild(this.topLine)
-        this.divElement.appendChild(this.actionElement)
+        this.divElement.append(this.main, this.chrome.bottom)
 
         this.setCurrentDisplay("hosts")
 
@@ -186,6 +225,7 @@ class MainApp implements Component {
     }
 
     setAppState(state: AppState, pushIntoHistory?: boolean) {
+        if (!state) return
         if (state.display == "hosts") {
             this.setCurrentDisplay("hosts", null, pushIntoHistory)
         } else if (state.display == "games" && state.hostId != null) {
@@ -216,6 +256,7 @@ class MainApp implements Component {
             }
 
             this.hostList.insertList(newHost.host_id, newHost)
+            this.syncNavigation()
         }
     }
 
@@ -331,14 +372,12 @@ class MainApp implements Component {
         // Unmount the current display
         if (this.currentDisplay == "hosts") {
             this.actionElement.removeChild(this.hostAddButton)
-            this.actionElement.removeChild(this.settingsButton)
 
-            this.hostList.unmount(this.divElement)
+            this.hostList.unmount(this.main)
         } else if (this.currentDisplay == "games") {
             this.actionElement.removeChild(this.backButton)
-            this.actionElement.removeChild(this.settingsButton)
 
-            this.gameList?.unmount(this.divElement)
+            this.gameList?.unmount(this.main)
             this.libraryHeader.remove()
         } else if (this.currentDisplay == "settings") {
             this.actionElement.removeChild(this.backButton)
@@ -346,35 +385,34 @@ class MainApp implements Component {
                 this.actionElement.removeChild(this.saveRoleDefaultsButton)
             }
 
-            this.settings?.unmount(this.divElement)
+            this.settings?.unmount(this.main)
+            this.main.querySelector(".gs-theme-row")?.remove()
         }
 
         // Mount the new display
         if (display == "hosts") {
             this.actionElement.appendChild(this.hostAddButton)
-            this.actionElement.appendChild(this.settingsButton)
 
-            this.hostList.mount(this.divElement)
+            this.hostList.mount(this.main)
 
             setAppState({ display: "hosts" }, pushIntoHistory)
         } else if (display == "games" && extraInfo?.hostId != null) {
             this.actionElement.appendChild(this.backButton)
-            this.actionElement.appendChild(this.settingsButton)
 
             if (this.gameList?.getHostId() != extraInfo?.hostId) {
                 this.gameList = new GameList(this.api, extraInfo?.hostId, extraInfo?.hostCache ?? null)
                 this.gameList.addForceReloadListener(this.forceFetch.bind(this))
             }
 
-            const libraryTitle = document.createElement("h2")
-            libraryTitle.textContent = I.game.libraryTitle
+            const libraryTitle = document.createElement("span")
+            libraryTitle.hidden = true
             this.libraryHeader.className = "gs-library-header"
             this.libraryHeader.replaceChildren(libraryTitle, this.libraryCount)
             this.gameList.setCountListener(count => {
                 this.libraryCount.textContent = I.game.gameCount(count)
             })
-            this.divElement.append(this.libraryHeader)
-            this.gameList.mount(this.divElement)
+            this.main.append(this.libraryHeader)
+            this.gameList.mount(this.main)
 
             this.refreshGameListActiveGame()
 
@@ -385,12 +423,16 @@ class MainApp implements Component {
                 this.actionElement.appendChild(this.saveRoleDefaultsButton)
             }
 
-            this.settings?.mount(this.divElement)
+            this.settings?.mount(this.main)
+            this.main.append(this.appearance)
 
             setAppState({ display: "settings" }, pushIntoHistory)
         }
 
         this.currentDisplay = display
+        if (display === "games") this.lastHostId = extraInfo?.hostId ?? null
+        this.pageTitle.textContent = display === "games" ? I.chrome.library : display === "hosts" ? I.chrome.servers : I.chrome.settings
+        this.syncNavigation()
     }
 
     async forceFetch() {
@@ -414,9 +456,36 @@ class MainApp implements Component {
             promiseRoles,
             this.refreshGameListActiveGame()
         ])
+        this.syncNavigation()
+        if (this.currentDisplay === "hosts" && this.user?.role !== "Admin" && this.hostList.getHosts().length === 1) {
+            this.setCurrentDisplay("games", { hostId: this.hostList.getHosts()[0].getHostId() }, false)
+        }
+    }
+    private syncNavigation() {
+        const hosts = this.hostList.getHosts()
+        const showServers = this.user?.role === "Admin" || hosts.length >= 2
+        this.serversNav.hidden = this.mobileServers.hidden = this.chrome.selector.hidden = !showServers
+        this.chrome.selector.replaceChildren(...hosts.map(host => {
+            const option = document.createElement("option")
+            option.value = String(host.getHostId())
+            option.textContent = host.getCache()?.name ?? String(host.getHostId())
+            option.selected = host.getHostId() === this.lastHostId
+            return option
+        }))
+        for (const [buttons, active] of [
+            [[this.libraryNav, this.mobileLibrary], this.currentDisplay === "games"],
+            [[this.serversNav, this.mobileServers], this.currentDisplay === "hosts"],
+            [[this.settingsButton, this.mobileSettings], this.currentDisplay === "settings"]
+        ] as const) {
+            for (const button of buttons) {
+                if (active) button.setAttribute("aria-current", "page")
+                else button.removeAttribute("aria-current")
+            }
+        }
     }
     private async refreshUserRole() {
         this.user = await apiGetUser(this.api)
+        this.chrome.setIdentity(this.user.name, this.user.role)
 
         if (this.topLineActions.contains(this.logoutButton)) {
             this.topLineActions.removeChild(this.logoutButton)

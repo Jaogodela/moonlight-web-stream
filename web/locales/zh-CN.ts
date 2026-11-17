@@ -1,8 +1,26 @@
 import type { Translations } from "./en"
 
 export const zhCN: Translations = {
+    chrome: {
+        library: "游戏库",
+        servers: "服务器",
+        settings: "设置",
+        play: "游玩",
+        account: "账户",
+        skipLink: "跳转到内容",
+        system: "系统",
+        light: "浅色",
+        dark: "深色",
+        theme: "主题",
+        changeTheme: "切换主题",
+        login: "登录",
+        logout: "退出",
+        admin: "管理",
+        addHost: "添加服务器",
+        navigation: "导航",
+    },
     index: {
-        appTitle: "Moonlight 网页版",
+        appTitle: "Gaspar",
         back: "返回",
         reload: "刷新",
         addHostUnreachable: (address: string) => `主机 "${address}" 无法访问`,

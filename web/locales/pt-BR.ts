@@ -1,8 +1,26 @@
 import type { Translations } from "./en"
 
 export const ptBR: Translations = {
+    chrome: {
+        library: "Biblioteca",
+        servers: "Servidores",
+        settings: "Ajustes",
+        play: "Jogar",
+        account: "Conta",
+        skipLink: "Pular para o conteúdo",
+        system: "Sistema",
+        light: "Claro",
+        dark: "Escuro",
+        theme: "Tema",
+        changeTheme: "Alterar tema",
+        login: "Entrar",
+        logout: "Sair",
+        admin: "Admin",
+        addHost: "Adicionar servidor",
+        navigation: "Navegação",
+    },
     index: {
-        appTitle: "Moonlight Web",
+        appTitle: "Gaspar",
         back: "Voltar",
         reload: "Recarregar",
         addHostUnreachable: (address: string) => `Host "${address}" não está acessível`,

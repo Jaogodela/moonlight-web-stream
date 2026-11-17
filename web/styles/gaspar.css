@@ -352,3 +352,38 @@ input[type=checkbox]:not(.gs-switch):checked::after { content: ""; position: abs
   .modal-background--auth { min-height: 100dvh; height: 100dvh; align-items: start; }
 }
 @media (prefers-reduced-motion: reduce) { .modal-content--auth { animation: none; } }
+
+/* P0-7 application chrome */
+body:not(.stream) { padding-top: 0; }
+.gs-topbar { position: sticky; top: 0; z-index: var(--gs-z-topbar, 100); height: 64px; display: flex; align-items: center; gap: 32px; padding: 0 24px; background: color-mix(in srgb, var(--gs-surface-1) 80%, transparent); backdrop-filter: blur(16px); border-bottom: 1px solid var(--gs-border-subtle); }
+.gs-wordmark { display: inline-flex; align-items: baseline; gap: 4px; color: var(--gs-text); font-size: 28px; font-weight: 700; text-decoration: none; letter-spacing: -1.5px; }
+.gs-wordmark span { width: 6px; height: 6px; background: var(--gs-accent); }
+.gs-topbar__actions { margin-left: auto; display: flex; align-items: center; gap: 8px; position: relative; }
+.gs-topbar .gs-icon-btn { width: 44px; height: 44px; padding: 0; }
+.gs-primary-nav { display: flex; align-self: stretch; gap: 24px; align-items: stretch; }
+.gs-primary-nav button, .gs-primary-nav a { display: inline-flex; align-items: center; border: 0; border-radius: 0; background: transparent; padding: 0; color: var(--gs-text-2); text-decoration: none; border-bottom: 2px solid transparent; }
+.gs-primary-nav [aria-current] { color: var(--gs-text); border-bottom-color: var(--gs-accent); }
+.gs-account-popover { position: absolute; right: 0; top: calc(100% + 12px); min-width: 240px; padding: 16px; border: 1px solid var(--gs-border); border-radius: var(--gs-radius-lg); background: var(--gs-surface-2); box-shadow: var(--gs-shadow-3); }
+.gs-account-popover > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-bottom: 12px; overflow-wrap: anywhere; }
+.gs-account-popover button { display: flex; width: 100%; justify-content: flex-start; margin-top: 4px; background: transparent; border-color: transparent; }
+.gs-role-badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--gs-accent-soft); color: var(--gs-accent-text); }
+.gs-main { padding: 24px; max-width: 1600px; margin: 0 auto; }
+.gs-page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+.gs-page-header h1 { margin: 0; }
+.gs-page-header__actions { position: static; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.gs-bottomnav { display: none; }
+.gs-theme-row { display: flex; align-items: center; gap: 16px; padding: 16px 0; }
+.gs-skiplink { position: fixed; top: 8px; left: 16px; transform: translateY(-200%); z-index: var(--gs-z-skiplink, 9999); padding: 12px 16px; background: var(--gs-surface-2); color: var(--gs-text); border-radius: var(--gs-radius-md); }
+.gs-skiplink:focus { transform: translateY(0); }
+@media (max-width: 767px) {
+  .gs-topbar { height: 56px; padding: 0 16px; gap: 12px; }
+  .gs-primary-nav, .gs-desktop-settings, .gs-host-selector { display: none; }
+  .gs-main { padding: 20px 16px calc(var(--gs-bottomnav-h) + var(--gs-safe-bottom) + 24px); }
+  .gs-bottomnav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: var(--gs-z-bottomnav); height: calc(var(--gs-bottomnav-h) + var(--gs-safe-bottom)); padding-bottom: var(--gs-safe-bottom); background: var(--gs-surface-1); border-top: 1px solid var(--gs-border-subtle); }
+  .gs-bottomnav button, .gs-bottomnav a { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; border: 0; border-radius: 0; background: transparent; color: var(--gs-text-2); font-size: 11px; text-decoration: none; padding: 4px; }
+  .gs-bottomnav .gs-icon { width: 56px; height: 32px; padding: 4px 16px; border-radius: 999px; }
+  .gs-bottomnav [aria-current] { color: var(--gs-accent-text); }
+  .gs-bottomnav [aria-current] .gs-icon { background: var(--gs-accent-soft); }
+}
+.gs-account-popover a { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px; color: var(--gs-text); text-decoration: none; border-radius: var(--gs-radius-md); }
+.gs-account-popover a:hover { background: var(--gs-state-hover); }

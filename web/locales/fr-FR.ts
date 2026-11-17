@@ -1,8 +1,26 @@
 import type { Translations } from "./en"
 
 export const frFr: Translations = {
+    chrome: {
+        library: "Bibliothèque",
+        servers: "Serveurs",
+        settings: "Paramètres",
+        play: "Jouer",
+        account: "Compte",
+        skipLink: "Aller au contenu",
+        system: "Système",
+        light: "Clair",
+        dark: "Sombre",
+        theme: "Thème",
+        changeTheme: "Changer de thème",
+        login: "Se connecter",
+        logout: "Se déconnecter",
+        admin: "Admin",
+        addHost: "Ajouter un serveur",
+        navigation: "Navigation",
+    },
     index: {
-        appTitle: "Moonlight Web",
+        appTitle: "Gaspar",
         back: "Retour",
         reload: "Recharger",
         addHostUnreachable: (address: string) => `L'hôte "${address}" est injoignable`,
