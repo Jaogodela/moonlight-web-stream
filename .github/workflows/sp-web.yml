@@ -1,0 +1,71 @@
+name: SP Web (static)
+
+# Build only the web frontend and publish the `dist` as an artifact.
+# Used by the Gaspar launcher (gaspar-up.ps1) to update gaspar.joaopedror.dev
+# without requiring Node/Rust on the owner's PC. It does not replace ci.yml.
+
+on:
+  push:
+    branches:
+      - sp/main
+      - 'sp/**'
+    paths:
+      - 'web/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'webpack.config.js'
+      - 'rust-toolchain.toml'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'Cargo.wasm.toml'
+      - 'ubrn.config.yaml'
+      - '.github/workflows/sp-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sp-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: Build web static
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+          submodules: recursive
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 26
+          cache: npm
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: sp-web
+
+      - name: Install wasm-bindgen
+        uses: cargo-bins/cargo-binstall@main
+      - run: cargo binstall --no-confirm --force wasm-bindgen-cli@0.2.128
+
+      - name: Build
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Upload static
+        uses: actions/upload-artifact@v7
+        with:
+          name: sp-web-static
+          path: dist
+          retention-days: 30
+          if-no-files-found: error
