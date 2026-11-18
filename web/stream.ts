@@ -341,6 +341,7 @@ class ViewerApp implements Component {
         this.toggleFullscreenWithKeybind = settings.toggleFullscreenWithKeybind
 
         this.stream = new Stream(this.api, hostId, appId, settings, [browserWidth, browserHeight], bootstrapRole.permissions)
+        this.renderConfiguredQuality(settings)
         this.startStream(settings)
 
         // Configure input
@@ -372,6 +373,29 @@ class ViewerApp implements Component {
             if (gamepad != null) {
                 this.onGamepadAdd(gamepad)
             }
+        }
+    }
+
+    private renderConfiguredQuality(settings: Settings): void {
+        // Use the session settings (role defaults + local settings + URL overrides),
+        // and the same resolved dimensions sent to the transport, including native/custom.
+        const [width, height] = this.stream.getStreamerSize()
+        const portuguese = getCurrentLanguage() === "pt-BR"
+        const fields = [
+            [portuguese ? "Res. definida" : "Configured res.", `${width}\u00d7${height}`],
+            [portuguese ? "FPS definidos" : "Configured FPS", `${settings.fps}`],
+            [portuguese ? "Bitrate definido" : "Configured rate", `${(settings.bitrate / 1000).toFixed(2)} Mbps`],
+        ]
+        const grid = this.statsDiv.querySelector("dl")!
+        for (const [label, text] of fields) {
+            const row = document.createElement("div")
+            row.classList.add("video-stats__row", "video-stats__row--configured")
+            const term = document.createElement("dt")
+            term.textContent = label
+            const value = document.createElement("dd")
+            value.textContent = text
+            row.append(term, value)
+            grid.appendChild(row)
         }
     }
 
@@ -929,7 +953,7 @@ class ViewerApp implements Component {
 
         let offset = this.getVideoCenterOffset(visibleTop, visibleBottom)
         let height = visibleBottom - visibleTop
-        if (cursor.visible) {
+        if (cursor.visible && this.keyboardHeight > 0) {
             // Local cursor mode keeps the full height and pans to keep the cursor visible.
             height = viewport.height
             offset = this.getVideoOffsetWithCursor(cursor.y, streamRect.height, offset, visibleTop, visibleBottom)
@@ -1274,6 +1298,62 @@ class ViewerSidebar implements Component, Sidebar, ScreenKeyboardListener {
             toggleButton.setAttribute("aria-label", this.menuCopy.toggleMenu)
             toggleButton.setAttribute("aria-controls", "sidebar-parent")
         }
+        this.organizeControls()
+    }
+
+    private organizeControls(): void {
+        const portuguese = getCurrentLanguage() === "pt-BR"
+        const display = this.div.querySelector(".gs-stream-menu__group--display")!
+        const input = this.div.querySelector(".gs-stream-menu__group--input")!
+        const session = this.div.querySelector(".gs-stream-menu__group--session")!
+        const inputActions = input.querySelector(".gs-stream-menu__actions")!
+        const [sendKey, lockMouse, keyboard] = inputActions.querySelectorAll(".gs-stream-menu__action")
+
+        const advanced = document.createElement("details")
+        advanced.classList.add("gs-stream-menu__advanced")
+        const summary = document.createElement("summary")
+        summary.textContent = portuguese ? "Controles avançados" : "Advanced controls"
+        const advancedActions = document.createElement("div")
+        advancedActions.classList.add("gs-stream-menu__actions")
+        advancedActions.appendChild(sendKey)
+        for (const field of inputActions.querySelectorAll(":scope > .gs-field, :scope > .input-div")) {
+            advancedActions.appendChild(field)
+        }
+        advanced.append(summary, advancedActions)
+        inputActions.append(keyboard, lockMouse)
+        if (portuguese || getCurrentLanguage() === "en") {
+            input.querySelector("h3")!.textContent = portuguese ? "Teclado e mouse" : "Keyboard & mouse"
+        }
+        this.div.append(display, input, advanced, session)
+
+        const title = this.div.querySelector("h2")!
+        const header = document.createElement("div")
+        header.classList.add("gs-stream-menu__header")
+        const resume = document.createElement("button")
+        resume.type = "button"
+        resume.classList.add("gs-stream-menu__resume")
+        resume.textContent = portuguese ? "Retomar" : "Resume"
+        resume.addEventListener("click", () => {
+            setSidebarExtended(false)
+            document.getElementById("sidebar-button")?.focus()
+        })
+        header.append(title, resume)
+        this.div.prepend(header)
+
+        const displayActions = display.querySelector(".gs-stream-menu__actions")!
+        const fullscreen = displayActions.querySelector(".gs-stream-menu__action")!
+        fullscreen.classList.add("gs-stream-menu__action--primary")
+        const scale = displayActions.querySelector(".gs-stream-menu__scale")!
+        displayActions.append(fullscreen, scale, this.statsButton)
+        this.statsButton.classList.add("gs-stream-menu__action--stats")
+        const badge = document.createElement("span")
+        badge.classList.add("gs-stream-menu__mode")
+        this.statsButton.appendChild(badge)
+        this.updateStatsButton("off")
+        const help = document.createElement("p")
+        help.classList.add("gs-stream-menu__help")
+        help.textContent = portuguese ? "100% mostra a imagem inteira. Valores maiores ampliam." : "100% fits the whole image. Higher values zoom in."
+        scale.appendChild(help)
     }
 
     private createGroup(label: string, name: string): HTMLDivElement {
@@ -1300,10 +1380,15 @@ class ViewerSidebar implements Component, Sidebar, ScreenKeyboardListener {
     }
 
     private updateStatsButton(mode: StreamStatsMode): void {
+        const labels = getCurrentLanguage() === "pt-BR"
+            ? { off: "Desligadas", minimal: "Básicas", full: "Completas" }
+            : { off: "Off", minimal: "Basic", full: "Full" }
+        const badge = this.statsButton.querySelector(".gs-stream-menu__mode")
+        if (badge) badge.textContent = labels[mode]
         this.statsButton.dataset.statsMode = mode
         this.statsButton.setAttribute("aria-pressed", mode == "off" ? "false" : "true")
-        this.statsButton.setAttribute("aria-label", `${I.stream.stats} (${mode})`)
-        this.statsButton.title = `${I.stream.stats}: ${mode}`
+        this.statsButton.setAttribute("aria-label", `${I.stream.stats} (${labels[mode]})`)
+        this.statsButton.title = `${I.stream.stats}: ${labels[mode]}`
     }
 
     private setActionButtonContent(button: HTMLButtonElement, label: string, accessibleLabel: string, icon: StreamMenuIcon) {
